@@ -22,4 +22,6 @@ public class TrainingProgram {
     private String targetGroup;
     private String coverage;
     private String contactInfo;
+
+    
 }

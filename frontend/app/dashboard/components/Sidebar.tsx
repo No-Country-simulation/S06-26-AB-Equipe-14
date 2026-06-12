@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useState } from 'react'
+import { BsGrid, BsMap, BsGraphUp, BsRobot } from 'react-icons/bs'
 
 export default function Sidebar() {
   const pathname = usePathname()
@@ -12,22 +13,22 @@ export default function Sidebar() {
     {
       label: 'Dashboard',
       href: '/dashboard',
-      icon: '📊',
+      icon: <BsGrid size={20} />,
     },
     {
       label: 'Mapa',
       href: '/map',
-      icon: '🗺️',
+      icon: <BsMap size={20} />,
     },
     {
       label: 'Relatórios',
       href: '/reports',
-      icon: '📈',
+      icon: <BsGraphUp size={20} />,
     },
     {
       label: 'Busca IA',
       href: '/aiquery',
-      icon: '🤖',
+      icon: <BsRobot size={20} />,
     },
   ]
 
@@ -61,20 +62,26 @@ export default function Sidebar() {
           </div>
         </div>
 
-        <nav className="p-4 space-y-2">
+        <nav className="p-4 mt-12 space-y-4">
           {menuItems.map((item) => (
             <Link
               key={item.href}
               href={item.href}
               onClick={() => setIsOpen(false)}
-              className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+              className={`group flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] transform hover:translate-x-2 ${
                 isActive(item.href)
-                  ? 'bg-blue-600 text-white'
-                  : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                  ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30 ring-1 ring-white/10'
+                  : 'text-slate-400 hover:bg-slate-800/80 hover:text-white'
               }`}
             >
-              <span className="text-xl">{item.icon}</span>
-              <span className="font-medium">{item.label}</span>
+              <span 
+                className={`transition-all duration-500 ${
+                  isActive(item.href) ? 'scale-110 text-white' : 'text-slate-500 group-hover:text-blue-400 group-hover:scale-110'
+                }`}
+              >
+                {item.icon}
+              </span>
+              <span className="font-semibold tracking-wide text-sm">{item.label}</span>
             </Link>
           ))}
         </nav>

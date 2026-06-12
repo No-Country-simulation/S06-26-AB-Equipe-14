@@ -1,12 +1,6 @@
 CREATE TABLE users (
-  id BIGINT AUTO_INCREMENT PRIMARY KEY,
-  email VARCHAR(180) NOT NULL UNIQUE,
-  name VARCHAR(120) NOT NULL,
-  role ENUM('ADMIN','ANALYST','VIEWER') DEFAULT 'VIEWER',
-  organisation VARCHAR(200),
-  country VARCHAR(60),
-  password_hash VARCHAR(255) NOT NULL,
-  active BOOLEAN DEFAULT TRUE,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  last_login TIMESTAMP
+  pk_user BIGINT AUTO_INCREMENT PRIMARY KEY, -- Casará com 'private Long pkUser'
+  email VARCHAR(180) NOT NULL UNIQUE,         -- Casará com 'private String email'
+  password VARCHAR(255) NOT NULL,            -- Casará com 'private String password'
+  name VARCHAR(120) NOT NULL                 -- Casará com 'private String name'
 );

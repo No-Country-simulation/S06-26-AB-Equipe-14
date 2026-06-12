@@ -124,7 +124,7 @@ export default function RegisterPage() {
       });
 
       if (!response.ok) {
-        let errorMessage = 'Erro ao criar conta';
+        let errorMessage = 'Erro ao criar conta';x
         try {
           const errorData = await response.json();
           // Tenta capturar a mensagem de erro vinda do backend (ex: erro de validação ou email duplicado)

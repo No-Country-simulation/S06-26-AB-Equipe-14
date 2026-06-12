@@ -2,12 +2,34 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useState } from 'react'
-import { BsGrid, BsMap, BsGraphUp, BsRobot } from 'react-icons/bs'
+import { useState, useRef, useEffect } from 'react'
+import { 
+  BsGrid, 
+  BsMap, 
+  BsGraphUp, 
+  BsRobot, 
+  BsPerson, 
+  BsCircleFill, 
+  BsBoxArrowRight, 
+  BsThreeDotsVertical 
+} from 'react-icons/bs'
 
 export default function Sidebar() {
   const pathname = usePathname()
   const [isOpen, setIsOpen] = useState(true)
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
+  const menuRef = useRef<HTMLDivElement>(null)
+
+  // Fecha o menu ao clicar fora dele
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setIsUserMenuOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   const menuItems = [
     {
@@ -87,10 +109,60 @@ export default function Sidebar() {
         </nav>
 
         {/* Footer */}
-        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-slate-700">
-          <p className="text-xs text-slate-500 text-center">
-            © 2024 - Equipe 14
-          </p>
+        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-slate-800/60 bg-slate-900" ref={menuRef}>
+          <div className="relative">
+            {/* Dropdown Menu */}
+            {isUserMenuOpen && (
+              <div className="absolute bottom-full left-0 w-full mb-3 bg-slate-800 border border-slate-700/50 rounded-2xl shadow-2xl overflow-hidden backdrop-blur-xl animate-in fade-in slide-in-from-bottom-2 duration-200">
+                <div className="p-2 space-y-1">
+                  <button 
+                    onClick={() => setIsUserMenuOpen(false)}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-slate-300 hover:bg-slate-700/50 rounded-xl transition-all"
+                  >
+                    <BsPerson size={18} className="text-slate-400" />
+                    <span>Perfil</span>
+                  </button>
+                  <button 
+                    onClick={() => setIsUserMenuOpen(false)}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-slate-300 hover:bg-slate-700/50 rounded-xl transition-all"
+                  >
+                    <BsCircleFill size={8} className="text-emerald-500 ml-1" />
+                    <span>Status</span>
+                  </button>
+                  <div className="h-px bg-slate-700/50 mx-2 my-1" />
+                  <Link 
+                    href="/login-user"
+                    onClick={() => setIsUserMenuOpen(false)}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-red-400 hover:bg-red-400/10 rounded-xl transition-all"
+                  >
+                    <BsBoxArrowRight size={18} />
+                    <span>Sair</span>
+                  </Link>
+                </div>
+              </div>
+            )}
+
+            {/* User Card */}
+            <button
+              onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+              className={`flex items-center gap-3 rounded-2xl border transition-all duration-300 px-3 py-3 w-full group ${
+                isUserMenuOpen 
+                  ? 'bg-slate-800 border-slate-700 shadow-lg' 
+                  : 'bg-slate-800/40 border-slate-800/50 hover:bg-slate-800/60'
+              }`}
+            >
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-500/20 to-blue-500/20 text-cyan-300 ring-1 ring-cyan-500/30 font-bold text-sm shrink-0 shadow-inner">
+                U
+              </div>
+              <div className="text-left flex-1 min-w-0">
+                <p className="text-sm font-bold text-white truncate leading-tight">Usuário</p>
+                <p className="text-[11px] text-slate-500 font-medium truncate uppercase tracking-wider leading-none mt-1">Administrador</p>
+              </div>
+              <BsThreeDotsVertical 
+                className={`text-slate-500 group-hover:text-slate-300 transition-all duration-300 ${isUserMenuOpen ? 'rotate-90 text-white' : ''}`} 
+              />
+            </button>
+          </div>
         </div>
       </aside>
 

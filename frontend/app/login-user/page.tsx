@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { userService } from "@/services/userService";
 
 export default function LoginUserPage() {
   const [email, setEmail] = useState("");
@@ -23,42 +24,33 @@ export default function LoginUserPage() {
     setIsLoading(true);
 
     try {
-      const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
+      const { token, user } = await userService.login({ email, password });
 
-      const response = await fetch(`${API_BASE}/api/users/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
-
-      if (!response.ok) {
-        const text = await response.text();
-        let message = "E-mail ou senha incorretos.";
-        try {
-          const json = JSON.parse(text);
-          message = json.message ?? message;
-        } catch {
-          if (response.status === 401) message = "Credenciais inválidas.";
-          if (response.status === 403) message = "Conta desactivada. Contacte o administrador.";
-        }
-        throw new Error(message);
+      if (token) {
+        localStorage.setItem("token", token);
       }
 
-      const data = await response.json();
-
-      // Guardar token se o backend retornar JWT
-      if (data.token) {
-        localStorage.setItem("token", data.token);
+      if (user) {
+        localStorage.setItem("user", JSON.stringify(user));
       }
 
       router.push("/dashboard");
     } catch (err: unknown) {
-      const message =
-        err instanceof Error
-          ? err.message.includes("Failed to fetch")
-            ? "Não foi possível conectar ao servidor."
-            : err.message
-          : "Erro inesperado. Tente novamente.";
+      let message = "Erro inesperado. Tente novamente.";
+
+      if (err instanceof Error) {
+        if (err.message.includes("Failed to fetch")) {
+          message = "Não foi possível conectar ao servidor.";
+        } else {
+          try {
+            const json = JSON.parse(err.message);
+            message = json.message ?? err.message;
+          } catch {
+            message = err.message;
+          }
+        }
+      }
+
       setError(message);
     } finally {
       setIsLoading(false);

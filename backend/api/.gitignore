@@ -77,3 +77,8 @@ desktop.ini
 *.p12
 *.jks
 *.keystore
+
+# .gitignore
+.env
+*.env
+application-local.properties

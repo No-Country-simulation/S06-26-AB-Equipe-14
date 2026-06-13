@@ -23,6 +23,16 @@ export interface UserResponse {
   lastLogin?: string;
 }
 
+export interface LoginRequest {
+  email: string;
+  password: string;
+}
+
+export interface LoginResponse {
+  token: string;
+  user: UserResponse;
+}
+
 async function handleResponse<T>(res: Response): Promise<T> {
   if (!res.ok) {
     const message = await res.text();
@@ -32,6 +42,15 @@ async function handleResponse<T>(res: Response): Promise<T> {
 }
 
 export const userService = {
+  // POST /api/users/login
+  login: (data: LoginRequest): Promise<LoginResponse> =>
+    fetch(`${API_BASE}/users/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    }).then(handleResponse<LoginResponse>),
+
+  // POST /api/users
   create: (data: UserRequest): Promise<UserResponse> =>
     fetch(`${API_BASE}/users`, {
       method: "POST",

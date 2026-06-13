@@ -26,7 +26,7 @@ public class UserController {
         UserDTO.Response created = service.create(dto);
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
- 
+
     // GET /api/users
     @GetMapping
     public ResponseEntity<List<UserDTO.Response>> findAll() {

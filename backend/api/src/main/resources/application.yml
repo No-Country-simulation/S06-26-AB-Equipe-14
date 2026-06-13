@@ -1,9 +1,8 @@
-# backend/src/main/resources/application.yml
 spring:
   datasource:
-    url: ${DB_URL:jdbc:mysql://mysql-25f2a1ac-paulinogoncalves2022-91ae.d.aivencloud.com:17230/defaultdb}
-    username: ${DB_USERNAME:avnadmin}
-    password: ${DB_PASSWORD:AVNS_SBAl6oJLFSUXxd5sVz3}
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver
     hikari:
       maximum-pool-size: 5
@@ -21,13 +20,13 @@ spring:
         format_sql: false
 
   flyway:
-    enabled: false  # ← desactivado até teres scripts em db/migration
+    enabled: false
 
 bit:
   ai:
-    openai-key: ${OPENAI_API_KEY:placeholder}
+    openai-key: ${OPENAI_API_KEY}
   jwt:
-    secret: ${JWT_SECRET:local-dev-secret-key-placeholder}
+    secret: ${JWT_SECRET}
 
 server:
   port: 8080

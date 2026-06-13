@@ -11,8 +11,8 @@ export default function LoginUserPage() {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
     setError("");
 
     if (!email || !password) {
@@ -23,27 +23,43 @@ export default function LoginUserPage() {
     setIsLoading(true);
 
     try {
-      // Substitua pela URL real do seu endpoint de autenticação
-      const response = await fetch("/api/auth/login", {
+      const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
+
+      const response = await fetch(`${API_BASE}/api/users/login`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
 
-      const data = await response.json();
-
       if (!response.ok) {
-        throw new Error(data.message || "E-mail ou senha incorretos.");
+        const text = await response.text();
+        let message = "E-mail ou senha incorretos.";
+        try {
+          const json = JSON.parse(text);
+          message = json.message ?? message;
+        } catch {
+          if (response.status === 401) message = "Credenciais inválidas.";
+          if (response.status === 403) message = "Conta desactivada. Contacte o administrador.";
+        }
+        throw new Error(message);
       }
 
-      // Se você usa cookies para sessão, o backend deve tratar o header Set-Cookie.
-      // Caso use Tokens (JWT), você pode salvar aqui: localStorage.setItem('token', data.token);
-      
+      const data = await response.json();
+
+      // Guardar token se o backend retornar JWT
+      if (data.token) {
+        localStorage.setItem("token", data.token);
+      }
+
       router.push("/dashboard");
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error
+          ? err.message.includes("Failed to fetch")
+            ? "Não foi possível conectar ao servidor."
+            : err.message
+          : "Erro inesperado. Tente novamente.";
+      setError(message);
     } finally {
       setIsLoading(false);
     }
@@ -52,69 +68,89 @@ export default function LoginUserPage() {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center px-4 py-10">
       <div className="w-full max-w-md rounded-3xl border border-white/10 bg-slate-900/90 p-10 shadow-2xl shadow-cyan-500/10 backdrop-blur-xl">
+
+        {/* Header */}
         <div className="mb-8 text-center">
-          <p className="text-sm uppercase tracking-[0.35em] text-cyan-300">Acesso do usuário</p>
+          <p className="text-sm uppercase tracking-[0.35em] text-cyan-300">Acesso do utilizador</p>
           <h1 className="mt-4 text-3xl font-semibold text-white">Entrar na sua conta</h1>
           <p className="mt-3 text-sm text-slate-400">
-            Use seu e-mail e senha para acessar o painel do Bit App.
+            Use o seu e-mail e senha para aceder ao painel do Bit App.
           </p>
         </div>
 
-        <form className="space-y-6" onSubmit={handleSubmit}>
+        <form className="space-y-5" onSubmit={handleSubmit} noValidate>
+
+          {/* Email */}
           <div>
-            <label className="block text-sm font-medium text-slate-300" htmlFor="email">
+            <label htmlFor="email" className="block text-sm font-medium text-slate-300 mb-2">
               E-mail
             </label>
             <input
               id="email"
               type="email"
               value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              className="mt-2 w-full rounded-2xl border border-slate-700 bg-slate-950/80 px-4 py-3 text-slate-100 outline-none transition focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20"
+              onChange={(e) => setEmail(e.target.value)}
+              disabled={isLoading}
               placeholder="seu@exemplo.com"
+              className="w-full rounded-2xl border border-slate-700 bg-slate-950/80 px-4 py-3 text-slate-100 outline-none transition focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20 disabled:opacity-50"
             />
           </div>
 
+          {/* Password */}
           <div>
-            <label className="block text-sm font-medium text-slate-300" htmlFor="password">
-              Senha
-            </label>
+            <div className="flex items-center justify-between mb-2">
+              <label htmlFor="password" className="block text-sm font-medium text-slate-300">
+                Senha
+              </label>
+              <Link
+                href="/forgot-password"
+                className="text-xs text-cyan-400 hover:text-cyan-300 transition-colors"
+              >
+                Esqueceu a senha?
+              </Link>
+            </div>
             <input
               id="password"
               type="password"
               value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              className="mt-2 w-full rounded-2xl border border-slate-700 bg-slate-950/80 px-4 py-3 text-slate-100 outline-none transition focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20"
+              onChange={(e) => setPassword(e.target.value)}
+              disabled={isLoading}
               placeholder="••••••••"
+              className="w-full rounded-2xl border border-slate-700 bg-slate-950/80 px-4 py-3 text-slate-100 outline-none transition focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20 disabled:opacity-50"
             />
           </div>
 
-          {error ? (
-            <p className="rounded-2xl bg-rose-500/10 border border-rose-500/20 px-4 py-3 text-sm text-rose-200">
-              {error}
-            </p>
-          ) : null}
+          {/* Erro */}
+          {error && (
+            <div className="rounded-2xl bg-rose-500/10 border border-rose-500/20 px-4 py-3">
+              <p className="text-sm text-rose-200">{error}</p>
+            </div>
+          )}
 
+          {/* Submit */}
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full rounded-2xl bg-cyan-500 px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-400 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full rounded-2xl bg-cyan-500 px-4 py-3 text-sm font-bold text-slate-950 transition-all duration-200 hover:bg-cyan-400 hover:scale-[1.01] active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:scale-100 shadow-lg shadow-cyan-500/20 mt-2"
           >
-            {isLoading ? "Autenticando..." : "Entrar"}
+            {isLoading ? (
+              <span className="flex items-center justify-center gap-2">
+                <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                </svg>
+                A autenticar...
+              </span>
+            ) : "Entrar"}
           </button>
         </form>
 
-        <div className="mt-6 text-center text-sm text-slate-400">
-          <p>
-            Não tem conta?{" "}
-            <Link
-              href="/register"
-              className="font-semibold text-cyan-400 transition-colors hover:text-cyan-300"
-            >
-              Cadastre-se
-            </Link>
-          </p>
-        </div>
+        <p className="mt-8 text-center text-sm text-slate-400">
+          Não tem conta?{" "}
+          <Link href="/register" className="font-semibold text-cyan-400 hover:text-cyan-300 transition-colors">
+            Cadastre-se
+          </Link>
+        </p>
       </div>
     </div>
   );

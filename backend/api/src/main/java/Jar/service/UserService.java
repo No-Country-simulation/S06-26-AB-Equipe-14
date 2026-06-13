@@ -40,6 +40,18 @@ public class UserService {
         return mapper.toResponse(repository.save(user));
     }
  
+    public UserDTO.Response login(UserDTO.Request dto) {
+        User user = repository.findByEmail(dto.getEmail())
+                .orElseThrow(() -> new IllegalArgumentException("E-mail ou senha incorretos."));
+
+        if (!passwordEncoder.matches(dto.getPassword(), user.getPassword())) {
+            throw new IllegalArgumentException("E-mail ou senha incorretos.");
+        }
+
+        // Se a autenticação for bem-sucedida, retorna o DTO de resposta do usuário
+        return mapper.toResponse(user);
+    }
+
     // ── READ ──────────────────────────────────────────────────────────────────
  
     @Transactional(readOnly = true)

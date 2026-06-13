@@ -72,7 +72,7 @@ export default function RegisterUserForm() {
       const { confirmPassword, ...payload } = form;
       await userService.create(payload);
       setSuccess(true);
-      setTimeout(() => router.push('/login-user'), 2000);
+      setTimeout(() => router.push('/'), 2000);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Erro ao criar conta. Tente novamente.';
       setErrors({ general: message });
@@ -94,7 +94,7 @@ export default function RegisterUserForm() {
           <p className="text-slate-400 mb-4">
             Será redirecionado para a página de login em breve...
           </p>
-          <Link href="/login-user" className="text-cyan-400 hover:text-cyan-300 font-semibold transition-colors">
+          <Link href="/" className="text-cyan-400 hover:text-cyan-300 font-semibold transition-colors">
             Clique aqui se não for redirecionado automaticamente
           </Link>
         </div>
@@ -213,7 +213,7 @@ export default function RegisterUserForm() {
 
         <p className="text-center text-slate-400 mt-8 text-sm">
           Já tem uma conta?{' '}
-          <Link href="/login-user" className="text-cyan-400 hover:text-cyan-300 font-semibold transition-colors">
+          <Link href="/" className="text-cyan-400 hover:text-cyan-300 font-semibold transition-colors">
             Faça login
           </Link>
         </p>

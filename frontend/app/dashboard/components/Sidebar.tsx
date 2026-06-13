@@ -15,7 +15,7 @@ import {
 } from 'react-icons/bs'
 
 export default function Sidebar() {
-  const pathname = usePathname()
+  const pathname = usePathname() || ''
   const [isOpen, setIsOpen] = useState(true)
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
@@ -39,17 +39,17 @@ export default function Sidebar() {
     },
     {
       label: 'Mapa',
-      href: '/map',
+      href: '/dashboard/map',
       icon: <BsMap size={20} />,
     },
     {
       label: 'Relatórios',
-      href: '/reports',
+      href: '/dashboard/reports',
       icon: <BsGraphUp size={20} />,
     },
     {
       label: 'Busca IA',
-      href: '/aiquery',
+      href: '/dashboard/aiquery',
       icon: <BsRobot size={20} />,
     },
   ]
@@ -61,6 +61,7 @@ export default function Sidebar() {
       {/* Botão Toggle para Mobile */}
       <button
         onClick={() => setIsOpen(!isOpen)}
+        aria-label="Alternar Menu"
         className="fixed z-40 p-2 m-2 md:hidden bg-blue-600 text-white rounded-lg hover:bg-blue-700"
       >
         ☰
@@ -115,13 +116,14 @@ export default function Sidebar() {
             {isUserMenuOpen && (
               <div className="absolute bottom-full left-0 w-full mb-3 bg-slate-800 border border-slate-700/50 rounded-2xl shadow-2xl overflow-hidden backdrop-blur-xl animate-in fade-in slide-in-from-bottom-2 duration-200">
                 <div className="p-2 space-y-1">
-                  <button 
+                  <Link 
+                    href="/home"
                     onClick={() => setIsUserMenuOpen(false)}
                     className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-slate-300 hover:bg-slate-700/50 rounded-xl transition-all"
                   >
                     <BsPerson size={18} className="text-slate-400" />
                     <span>Perfil</span>
-                  </button>
+                  </Link>
                   <button 
                     onClick={() => setIsUserMenuOpen(false)}
                     className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-slate-300 hover:bg-slate-700/50 rounded-xl transition-all"

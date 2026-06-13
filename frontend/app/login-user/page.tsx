@@ -2,13 +2,16 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export default function LoginUserPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError("");
 
@@ -17,8 +20,33 @@ export default function LoginUserPage() {
       return;
     }
 
-    // TODO: conectar com a API de autenticação.
-    console.log("Login solicitado", { email, password });
+    setIsLoading(true);
+
+    try {
+      // Substitua pela URL real do seu endpoint de autenticação
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "E-mail ou senha incorretos.");
+      }
+
+      // Se você usa cookies para sessão, o backend deve tratar o header Set-Cookie.
+      // Caso use Tokens (JWT), você pode salvar aqui: localStorage.setItem('token', data.token);
+      
+      router.push("/dashboard");
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -69,9 +97,10 @@ export default function LoginUserPage() {
 
           <button
             type="submit"
-            className="w-full rounded-2xl bg-cyan-500 px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-400"
+            disabled={isLoading}
+            className="w-full rounded-2xl bg-cyan-500 px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-400 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Entrar
+            {isLoading ? "Autenticando..." : "Entrar"}
           </button>
         </form>
 

@@ -1,33 +1,79 @@
-HELP.md
+# =========================
+# MAVEN / BUILD
+# =========================
 target/
 .mvn/wrapper/maven-wrapper.jar
-!**/src/main/**/target/
-!**/src/test/**/target/
+HELP.md
 
-### STS ###
-.apt_generated
-.classpath
-.factorypath
-.project
-.settings
-.springBeans
-.sts4-cache
+# =========================
+# VARIÁVEIS DE AMBIENTE (CRÍTICO)
+# =========================
+.env
+.env.*
+!.env.example
 
-### IntelliJ IDEA ###
-.idea
+# =========================
+# SPRING BOOT / LOGS
+# =========================
+logs/
+*.log
+spring.log
+
+# =========================
+# JAVA COMPILED FILES
+# =========================
+*.class
+*.jar
+*.war
+*.ear
+*.nar
+
+# =========================
+# IDEs
+# =========================
+
+# IntelliJ IDEA
+.idea/
 *.iws
 *.iml
 *.ipr
 
-### NetBeans ###
-/nbproject/private/
-/nbbuild/
-/dist/
-/nbdist/
-/.nb-gradle/
-build/
-!**/src/main/**/build/
-!**/src/test/**/build/
+# Eclipse / STS
+.classpath
+.project
+.settings/
+.factorypath
+.springBeans
+.sts4-cache
 
-### VS Code ###
+# NetBeans
+nbproject/private/
+nbbuild/
+dist/
+nbdist/
+.nb-gradle/
+build/
+
+# =========================
+# VS CODE
+# =========================
 .vscode/
+!.vscode/extensions.json
+
+# =========================
+# SISTEMA OPERATIVO
+# =========================
+.DS_Store
+.DS_Store?
+._*
+Thumbs.db
+desktop.ini
+
+# =========================
+# CERTIFICADOS / CHAVES
+# =========================
+*.pem
+*.key
+*.p12
+*.jks
+*.keystore

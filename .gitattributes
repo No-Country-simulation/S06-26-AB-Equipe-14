@@ -1,6 +1,74 @@
-* text=auto
+# =========================
+# DEPENDÊNCIAS
+# =========================
+node_modules/
+.pnp/
+.pnp.js
+.yarn/
 
-*.java text eol=lf
-*.js text eol=lf
-*.ts text eol=lf
-*.cmd text eol=crlf 
+# Yarn cache (opcional)
+.yarn/cache/
+.yarn/unplugged/
+.yarn/build-state.yml
+.yarn/install-state.gz
+
+# =========================
+# NEXT.JS
+# =========================
+.next/
+out/
+next-env.d.ts
+*.tsbuildinfo
+
+# =========================
+# PRODUÇÃO / BUILD
+# =========================
+build/
+dist/
+
+# =========================
+# VARIÁVEIS DE AMBIENTE (CRÍTICO)
+# =========================
+.env
+.env.*
+!.env.example
+
+# =========================
+# TESTES E COBERTURA
+# =========================
+coverage/
+.nyc_output/
+
+# =========================
+# DEPLOY
+# =========================
+.vercel/
+railway/
+
+# =========================
+# IDEs
+# =========================
+.vscode/
+.idea/
+
+# =========================
+# DEBUG E LOGS
+# =========================
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.log
+
+# =========================
+# SISTEMA OPERATIVO
+# =========================
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# =========================
+# MISC
+# =========================
+*.pem
+*.key

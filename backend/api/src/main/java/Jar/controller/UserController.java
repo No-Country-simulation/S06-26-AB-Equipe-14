@@ -2,34 +2,62 @@ package Jar.controller;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
-import Jar.dto.UserTableDTO.RegisterRequestDTO;
-import Jar.dto.UserTableDTO.UserResponseDTO;
+import Jar.dto.UserDTO;
 import Jar.service.UserService;
 
+import java.util.List;
+ 
 @RestController
-@RequestMapping("/api/auth")
-@CrossOrigin(origins = "http://localhost:3000") // Permite que o Next.js acesse a API
+@RequestMapping("/api/users")
+@CrossOrigin(origins = "*") // Ajustar para o domínio do Next.js em produção
 public class UserController {
-
-    private final UserService userService;
-
-    public UserController(UserService userService) {
-        this.userService = userService;
+ 
+    private final UserService service;
+ 
+    public UserController(UserService service) {
+        this.service = service;
     }
-
-    @PostMapping("/register")
-    public ResponseEntity<UserResponseDTO> register(@RequestBody RegisterRequestDTO dto) {
-        UserResponseDTO response = userService.register(dto);
-        return new ResponseEntity<>(response, HttpStatus.CREATED);
+ 
+    // POST /api/users
+    @PostMapping
+    public ResponseEntity<UserDTO.Response> create(@RequestBody UserDTO.Request dto) {
+        UserDTO.Response created = service.create(dto);
+        return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
-    
-    // O método de login real geralmente envolve Spring Security + JWT. 
-    // Faremos o mock ou a estrutura básica dele quando você avançar para a segurança.
-
+ 
+    // GET /api/users
+    @GetMapping
+    public ResponseEntity<List<UserDTO.Response>> findAll() {
+        return ResponseEntity.ok(service.findAll());
+    }
+ 
+    // GET /api/users/{id}
+    @GetMapping("/{id}")
+    public ResponseEntity<UserDTO.Response> findById(@PathVariable Long id) {
+        return ResponseEntity.ok(service.findById(id));
+    }
+ 
+    // PUT /api/users/{id}
+    @PutMapping("/{id}")
+    public ResponseEntity<UserDTO.Response> update(
+            @PathVariable Long id,
+            @RequestBody UserDTO.Request dto) {
+        return ResponseEntity.ok(service.update(id, dto));
+    }
+ 
+    // PATCH /api/users/{id}/deactivate  — soft delete
+    @PatchMapping("/{id}/deactivate")
+    public ResponseEntity<Void> deactivate(@PathVariable Long id) {
+        service.deactivate(id);
+        return ResponseEntity.noContent().build();
+    }
+ 
+    // DELETE /api/users/{id}  — hard delete
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        service.delete(id);
+        return ResponseEntity.noContent().build();
+    }
 }

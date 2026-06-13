@@ -1,2 +1,11 @@
+# Normaliza finais de linha automaticamente
+* text=auto
+
+# Maven wrapper (Linux/Mac)
 /mvnw text eol=lf
+
+# Maven wrapper (Windows)
 *.cmd text eol=crlf
+
+# Opcional: scripts shell
+*.sh text eol=lf

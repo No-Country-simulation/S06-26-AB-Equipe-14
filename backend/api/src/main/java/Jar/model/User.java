@@ -1,116 +1,80 @@
 package Jar.model;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-import java.util.Objects;
 
+import jakarta.persistence.*;
+import java.time.LocalDateTime;
+ 
 @Entity
 @Table(name = "users")
 public class User {
-
+ 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long pkUser;
-
-    @Column(nullable = false, unique = true)
+    @Column(name = "pk_user")
+    private Long id;
+ 
+    @Column(name = "email", nullable = false, unique = true, length = 180)
     private String email;
-
-    @Column(nullable = false)
-    private String password;
-
+ 
+    @Column(name = "name", nullable = false, length = 120)
     private String name;
-    
-
-    public User() {
+ 
+    @Column(name = "role", length = 50)
+    private String role = "VIEWER";
+ 
+    @Column(name = "organisation", length = 200)
+    private String organisation;
+ 
+    @Column(name = "country", length = 60)
+    private String country;
+ 
+    @Column(name = "password", nullable = false, length = 255)
+    private String password;
+ 
+    @Column(name = "active")
+    private Boolean active = true;
+ 
+    @Column(name = "created_at", updatable = false)
+    private LocalDateTime createdAt;
+ 
+    @Column(name = "last_login")
+    private LocalDateTime lastLogin;
+ 
+    @PrePersist
+    protected void onCreate() {
+        this.createdAt = LocalDateTime.now();
     }
-
-    public User(Long pkUser, String email, String password, String name) {
-        this.pkUser = pkUser;
-        this.email = email;
-        this.password = password;
-        this.name = name;
-    }
-
-    public Long getPkUser() {
-        return this.pkUser;
-    }
-
-    public void setPkUser(Long pkUser) {
-        this.pkUser = pkUser;
-    }
-
-    public String getEmail() {
-        return this.email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
-    }
-
-    public String getPassword() {
-        return this.password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
-    }
-
-    public String getName() {
-        return this.name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public User pkUser(Long pkUser) {
-        setPkUser(pkUser);
-        return this;
-    }
-
-    public User email(String email) {
-        setEmail(email);
-        return this;
-    }
-
-    public User password(String password) {
-        setPassword(password);
-        return this;
-    }
-
-    public User name(String name) {
-        setName(name);
-        return this;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (o == this)
-            return true;
-        if (!(o instanceof User)) {
-            return false;
-        }
-        User user = (User) o;
-        return Objects.equals(pkUser, user.pkUser) && Objects.equals(email, user.email) && Objects.equals(password, user.password) && Objects.equals(name, user.name);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(pkUser, email, password, name);
-    }
-
-    @Override
-    public String toString() {
-        return "{" +
-            " pkUser='" + getPkUser() + "'" +
-            ", email='" + getEmail() + "'" +
-            ", password='" + getPassword() + "'" +
-            ", name='" + getName() + "'" +
-            "}";
-    }
-
+ 
+    // Getters e Setters
+ 
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+ 
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
+ 
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
+ 
+    public String getRole() { return role; }
+    public void setRole(String role) { this.role = role; }
+ 
+    public String getOrganisation() { return organisation; }
+    public void setOrganisation(String organisation) { this.organisation = organisation; }
+ 
+    public String getCountry() { return country; }
+    public void setCountry(String country) { this.country = country; }
+ 
+    public String getPassword() { return password; }
+    public void setPassword(String password) { this.password = password; }
+ 
+    public Boolean getActive() { return active; }
+    public void setActive(Boolean active) { this.active = active; }
+ 
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+ 
+    public LocalDateTime getLastLogin() { return lastLogin; }
+    public void setLastLogin(LocalDateTime lastLogin) { this.lastLogin = lastLogin; }
 }
+ 

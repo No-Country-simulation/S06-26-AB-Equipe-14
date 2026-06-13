@@ -131,8 +131,12 @@ export default function Sidebar() {
                   </button>
                   <div className="h-px bg-slate-700/50 mx-2 my-1" />
                   <Link 
-                    href="/login-user"
-                    onClick={() => setIsUserMenuOpen(false)}
+                    href="/"
+                    onClick={() => {
+                      setIsUserMenuOpen(false);
+                      localStorage.removeItem('token');
+                      localStorage.removeItem('user');
+                    }}
                     className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-red-400 hover:bg-red-400/10 rounded-xl transition-all"
                   >
                     <BsBoxArrowRight size={18} />

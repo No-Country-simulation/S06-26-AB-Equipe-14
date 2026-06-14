@@ -27,6 +27,12 @@ public class UserController {
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
+    // POST /api/users/login
+    @PostMapping("/login")
+    public ResponseEntity<UserDTO.Response> login(@RequestBody UserDTO.Request dto) {
+        return ResponseEntity.ok(service.login(dto));
+    }
+
     // GET /api/users
     @GetMapping
     public ResponseEntity<List<UserDTO.Response>> findAll() {

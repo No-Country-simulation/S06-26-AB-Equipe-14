@@ -30,11 +30,7 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
 
-        config.setAllowedOrigins(List.of(
-            "http://localhost:3000"     // Next.js dev
-            // adiciona aqui o domínio do Vercel quando fizeres deploy
-            // "https://teu-app.vercel.app"
-        ));
+        config.setAllowedOrigins(List.of("*")); // em dev permite requests de outros dispositivos na rede
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(false); // muda para true quando implementares JWT real

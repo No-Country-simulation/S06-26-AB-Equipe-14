@@ -1,4 +1,4 @@
-const API_URL = 'http://localhost:8080/api/auth';
+const API_URL = 'http://localhost:8000/api/auth';
 
 export interface RegisterData {
   name: string;

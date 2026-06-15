@@ -9,7 +9,7 @@ Hoje estabeleci a base do backend do projeto App BiT, configurando o ambiente Py
 🚀 Conquistas & Implementações
 1. Configuração do Ambiente e Servidor
 Tecnologia: Python e FastAPI.
-Servidor: Configurado e a correr localmente na porta 8080.
+Servidor: Configurado e a correr localmente na porta 8000.
 CORS (Cross-Origin Resource Sharing): Configurado para permitir comunicações seguras a partir do frontend (por exemplo, http://localhost:3000).
 Ponto de Entrada: Endpoint inicial de verificação de status (GET /) a responder com sucesso: "Backend App BiT a funcionar!".
 2. Fluxo de Autenticação (/api/auth/* & /api/users/*)

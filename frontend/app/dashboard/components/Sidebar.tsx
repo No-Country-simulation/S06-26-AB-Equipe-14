@@ -16,8 +16,9 @@ import {
 
 export default function Sidebar() {
   const pathname = usePathname() || ''
-  const [isOpen, setIsOpen] = useState(true)
+  const [isOpen, setIsOpen] = useState(false) // Inicialmente fechado no mobile
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
+  const [user, setUser] = useState<{ name: string, role: string } | null>(null)
   const menuRef = useRef<HTMLDivElement>(null)
 
   // Fecha o menu ao clicar fora dele
@@ -29,6 +30,23 @@ export default function Sidebar() {
     }
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  // Efeito para abrir a sidebar por padrão apenas em desktop
+  useEffect(() => {
+    if (window.innerWidth >= 768) setIsOpen(true)
+  }, [])
+
+  // Carrega os dados do usuário logado
+  useEffect(() => {
+    const storedUser = localStorage.getItem('user')
+    if (storedUser) {
+      try {
+        setUser(JSON.parse(storedUser))
+      } catch (error) {
+        console.error("Erro ao carregar usuário na Sidebar:", error)
+      }
+    }
   }, [])
 
   const menuItems = [
@@ -158,11 +176,11 @@ export default function Sidebar() {
               }`}
             >
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-500/20 to-blue-500/20 text-cyan-300 ring-1 ring-cyan-500/30 font-bold text-sm shrink-0 shadow-inner">
-                U
+                {user?.name ? user.name[0].toUpperCase() : 'U'}
               </div>
               <div className="text-left flex-1 min-w-0">
-                <p className="text-sm font-bold text-white truncate leading-tight">Usuário</p>
-                <p className="text-[11px] text-slate-500 font-medium truncate uppercase tracking-wider leading-none mt-1">Administrador</p>
+                <p className="text-sm font-bold text-white truncate leading-tight">{user?.name || 'Usuário'}</p>
+                <p className="text-[11px] text-slate-500 font-medium truncate uppercase tracking-wider leading-none mt-1">{user?.role || 'Administrador'}</p>
               </div>
               <BsThreeDotsVertical 
                 className={`text-slate-500 group-hover:text-slate-300 transition-all duration-300 ${isUserMenuOpen ? 'rotate-90 text-white' : ''}`} 

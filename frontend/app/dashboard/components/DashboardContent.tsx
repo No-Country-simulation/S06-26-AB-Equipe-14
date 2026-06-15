@@ -3,61 +3,78 @@
 import { BsPeople, BsCheckCircle, BsGraphUp, BsMap } from 'react-icons/bs';
 
 export default function DashboardContent() {
+  // Esta estrutura está pronta para ser substituída por um estado (useState) 
+  // que receba os dados do seu backend via useEffect/fetch.
   const stats = [
-    { label: 'Total de Registos', value: '1,284', icon: <BsPeople />, color: 'text-cyan-400', bg: 'bg-cyan-400/10' },
-    { label: 'Projetos Ativos', value: '42', icon: <BsCheckCircle />, color: 'text-emerald-400', bg: 'bg-emerald-400/10' },
-    { label: 'Taxa de Emprego', value: '68%', icon: <BsGraphUp />, color: 'text-blue-400', bg: 'bg-blue-400/10' },
-    { label: 'Regiões Cobertas', value: '12', icon: <BsMap />, color: 'text-purple-400', bg: 'bg-purple-400/10' },
+    {
+      id: 1,
+      label: 'Utilizadores Ativos',
+      value: '1,284',
+      icon: <BsPeople size={18} />,
+      color: 'text-blue-400',
+      barColor: 'bg-blue-500',
+      glow: 'shadow-blue-500/20',
+    },
+    {
+      id: 2,
+      label: 'Projetos Concluídos',
+      value: '42',
+      icon: <BsCheckCircle size={18} />,
+      color: 'text-emerald-400',
+      barColor: 'bg-emerald-500',
+      glow: 'shadow-emerald-500/20',
+    },
+    {
+      id: 3,
+      label: 'Crescimento Mensal',
+      value: '+12.5%',
+      icon: <BsGraphUp size={18} />,
+      color: 'text-amber-400',
+      barColor: 'bg-amber-500',
+      glow: 'shadow-amber-500/20',
+    },
+    {
+      id: 4,
+      label: 'Regiões Mapeadas',
+      value: '18',
+      icon: <BsMap size={18} />,
+      color: 'text-purple-400',
+      barColor: 'bg-purple-500',
+      glow: 'shadow-purple-500/20',
+    },
   ];
 
   return (
-    <div className="p-8 space-y-8 animate-in fade-in duration-500">
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-white">Bem-vindo ao Painel</h1>
-        <p className="text-slate-400 mt-2">Visão geral dos indicadores e métricas sociais.</p>
-      </div>
-
-      {/* Cards de Estatísticas */}
+    <div className="px-4 sm:px-8 pb-8 pt-4 space-y-6 sm:space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      {/* Grid de Cards (Equivalente a col-3 em layout de 12 colunas) */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat, i) => (
-          <div key={i} className="bg-slate-900/50 border border-white/10 p-6 rounded-3xl backdrop-blur-xl hover:border-white/20 transition-all shadow-xl shadow-black/20">
-            <div className="flex items-center justify-between mb-4">
-              <div className={`p-3 rounded-2xl ${stat.bg} ${stat.color} text-xl`}>
+        {stats.map((stat) => (
+          <div 
+            key={stat.id}
+            className={`relative group overflow-hidden bg-slate-900/50 border border-white/20 p-4 rounded-xl backdrop-blur-xl transition-all hover:bg-slate-800/60 hover:border-white/30 shadow-xl ${stat.glow}`}
+          >
+            <div className="flex items-center gap-2 mb-2">
+              <div className={`p-1.5 rounded-lg bg-white/5 ${stat.color} group-hover:scale-110 transition-transform duration-300`}>
                 {stat.icon}
               </div>
-              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Atualizado</span>
+              <p className="text-slate-400 text-[0.65rem] font-medium tracking-wide uppercase">{stat.label}</p>
             </div>
-            <h3 className="text-slate-400 text-sm font-medium">{stat.label}</h3>
-            <p className="text-3xl font-bold text-white mt-1">{stat.value}</p>
+
+            <h3 className="text-xl font-bold text-white">{stat.value}</h3>
+
+            {/* Barra Inferior Estilizada */}
+            <div className={`absolute bottom-0 left-0 right-0 h-1 ${stat.barColor} opacity-70 group-hover:opacity-100 transition-opacity`} />
           </div>
         ))}
       </div>
 
-      {/* Placeholders para Gráficos/Visualizações */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="bg-slate-900/50 border border-white/10 p-8 rounded-3xl backdrop-blur-xl h-[400px] flex flex-col shadow-xl shadow-black/20">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-bold text-white">Concentração Populacional</h2>
-            <div className="h-2 w-2 rounded-full bg-cyan-500 animate-pulse" />
-          </div>
-          <div className="flex-1 border-2 border-dashed border-slate-800 rounded-2xl flex items-center justify-center group hover:border-slate-700 transition-colors">
-             <p className="text-slate-500 text-sm font-medium group-hover:text-slate-400">
-               [ Placeholder: Gráfico de Séries Temporais ]
-             </p>
-          </div>
+      {/* Placeholder para conteúdo adicional */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="md:col-span-2 h-64 bg-slate-900/40 border border-dashed border-white/10 rounded-3xl flex items-center justify-center p-4 text-center">
+          <p className="text-slate-500 italic">Gráfico de tendências em desenvolvimento...</p>
         </div>
-
-        <div className="bg-slate-900/50 border border-white/10 p-8 rounded-3xl backdrop-blur-xl h-[400px] flex flex-col shadow-xl shadow-black/20">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-bold text-white">Análise de Impacto Regional</h2>
-            <div className="h-2 w-2 rounded-full bg-blue-500" />
-          </div>
-          <div className="flex-1 border-2 border-dashed border-slate-800 rounded-2xl flex items-center justify-center group hover:border-slate-700 transition-colors">
-             <p className="text-slate-500 text-sm font-medium group-hover:text-slate-400">
-               [ Placeholder: Mapa de Calor Regional ]
-             </p>
-          </div>
+        <div className="h-64 bg-slate-900/40 border border-dashed border-white/10 rounded-3xl flex items-center justify-center p-4 text-center">
+          <p className="text-slate-500 italic">Atividades recentes...</p>
         </div>
       </div>
     </div>

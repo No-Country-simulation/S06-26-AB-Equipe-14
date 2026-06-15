@@ -47,7 +47,7 @@ export default function DashboardContent() {
   return (
     <div className="px-4 sm:px-8 pb-8 pt-4 space-y-6 sm:space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       {/* Grid de Cards (Equivalente a col-3 em layout de 12 colunas) */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
         {stats.map((stat) => (
           <div 
             key={stat.id}
@@ -60,7 +60,7 @@ export default function DashboardContent() {
               <p className="text-slate-400 text-[0.65rem] font-medium tracking-wide uppercase">{stat.label}</p>
             </div>
 
-            <h3 className="text-xl font-bold text-white">{stat.value}</h3>
+            <h3 className="text-lg sm:text-xl font-bold text-white">{stat.value}</h3>
 
             {/* Barra Inferior Estilizada */}
             <div className={`absolute bottom-0 left-0 right-0 h-1 ${stat.barColor} opacity-70 group-hover:opacity-100 transition-opacity`} />

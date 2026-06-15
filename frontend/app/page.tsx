@@ -90,17 +90,9 @@ export default function LoginUserPage() {
 
           {/* Password */}
           <div>
-            <div className="flex items-center justify-between mb-2">
-              <label htmlFor="password" className="block text-sm font-medium text-slate-300">
-                Senha
-              </label>
-              <Link
-                href="/forgot-password"
-                className="text-xs text-cyan-400 hover:text-cyan-300 transition-colors"
-              >
-                Esqueceu a senha?
-              </Link>
-            </div>
+            <label htmlFor="password" className="block text-sm font-medium text-slate-300 mb-2">
+              Senha
+            </label>
             <input
               id="password"
               type="password"
@@ -110,6 +102,11 @@ export default function LoginUserPage() {
               placeholder="••••••••"
               className="w-full rounded-2xl border border-slate-700 bg-slate-950/80 px-4 py-3 text-slate-100 outline-none transition focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20 disabled:opacity-50"
             />
+            <div className="flex justify-end mt-2">
+              <Link href="/forgot-password" className="text-xs text-cyan-400 hover:text-cyan-300 transition-colors">
+                Esqueceu a senha?
+              </Link>
+            </div>
           </div>
 
           {/* Erro */}

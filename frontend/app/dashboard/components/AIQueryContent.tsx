@@ -1,78 +1,190 @@
 'use client';
 
-import { BsRobot, BsSend, BsStars, BsLightningCharge, BsQuestionCircle } from 'react-icons/bs';
+import { useState, useEffect, useRef } from 'react';
+import { 
+  BsRobot, 
+  BsSend, 
+  BsMagic, 
+  BsCpu, 
+  BsLightbulb, 
+  BsLightningCharge,
+  BsTerminal
+} from 'react-icons/bs';
 
 export default function AIQueryContent() {
+  const [query, setQuery] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
+  const [messages, setMessages] = useState([
+    { 
+      role: 'ai', 
+      content: 'Olá! Sou o assistente BiT Core. Como posso ajudar na análise de dados hoje?',
+      timestamp: 'Sistema Ativo' 
+    }
+  ]);
+  const chatEndRef = useRef<HTMLDivElement>(null);
+
+  // Simula o efeito de "streaming" da resposta da IA
+  const simulateAIResponse = (userText: string) => {
+    setIsTyping(true);
+    
+    // Respostas pré-definidas para simulação
+    const mockResponse = `Com base na análise dos dados de ${userText}, identifiquei uma tendência de crescimento de 14% na inclusão digital na região sul. Recomendo focar a infraestrutura nos pontos de maior densidade populacional detectados via CDRView.`;
+    
+    let currentText = '';
+    const tokens = mockResponse.split(' ');
+    let i = 0;
+
+    const interval = setInterval(() => {
+      if (i < tokens.length) {
+        currentText += (i === 0 ? '' : ' ') + tokens[i];
+        setMessages(prev => [
+          ...prev.slice(0, -1),
+          { role: 'ai', content: currentText + ' ▌', timestamp: 'Processando...' }
+        ]);
+        i++;
+      } else {
+        clearInterval(interval);
+        setMessages(prev => [
+          ...prev.slice(0, -1),
+          { role: 'ai', content: mockResponse, timestamp: 'Gerado agora' }
+        ]);
+        setIsTyping(false);
+      }
+    }, 80);
+  };
+
+  const handleSend = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!query.trim() || isTyping) return;
+
+    const userMessage = { role: 'user', content: query, timestamp: 'Enviado' };
+    setMessages(prev => [...prev, userMessage, { role: 'ai', content: '', timestamp: 'Pensando...' }]);
+    
+    const currentQuery = query;
+    setQuery('');
+    simulateAIResponse(currentQuery);
+  };
+
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
   const suggestions = [
-    "Quais regiões tiveram maior aumento na taxa de emprego?",
-    "Resuma os projetos ativos em Angola.",
-    "Qual a relação entre mentoria e retenção em cursos?",
-    "Compare o impacto do Q1 entre as províncias."
+    "Previsão de impacto para Luanda",
+    "Análise de churn por região",
+    "Resumo de KPIs do último mês"
   ];
 
   return (
-    <div className="p-4 sm:p-8 max-w-5xl mx-auto space-y-8 sm:space-y-12 animate-in fade-in zoom-in-95 duration-500">
-      {/* Header Centralizado */}
-      <div className="text-center space-y-4">
-        <div className="inline-flex p-3 sm:p-4 rounded-3xl bg-gradient-to-br from-cyan-500/20 to-blue-500/20 text-cyan-400 ring-1 ring-cyan-500/30 mb-2">
-          <BsRobot size={40} />
+    <div className="pt-4 px-4 pb-0 sm:pt-8 sm:px-8 sm:pb-0 h-[calc(100vh-64px)] flex flex-col space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+      
+      {/* Header Informativo */}
+      <div className="flex items-center justify-between bg-slate-900/40 border border-white/10 p-4 rounded-3xl backdrop-blur-xl">
+        <div className="flex items-center gap-4">
+          <div className="h-12 w-12 rounded-2xl bg-cyan-500/20 flex items-center justify-center text-cyan-400 shadow-lg shadow-cyan-500/20">
+            <BsRobot size={24} className="animate-pulse" />
+          </div>
+          <div>
+            <h2 className="text-white font-bold tracking-tight">BiT AI Assistant</h2>
+            <p className="text-[10px] text-cyan-500/60 font-mono uppercase tracking-widest flex items-center gap-2">
+              <span className="flex h-1.5 w-1.5 rounded-full bg-emerald-500" /> Neural Engine v4.0.2
+            </p>
+          </div>
         </div>
-        <h1 className="text-3xl sm:text-4xl font-bold text-white tracking-tight">Busca Inteligente</h1>
-        <p className="text-slate-400 text-lg max-w-2xl mx-auto">
-          Utilize inteligência artificial para extrair insights dos dados públicos e métricas sociais de forma instantânea.
-        </p>
-      </div>
-
-      {/* Chat / Input Container */}
-      <div className="relative group">
-        <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 rounded-[2rem] blur opacity-25 group-hover:opacity-50 transition duration-1000"></div>
-        <div className="relative bg-slate-900/80 border border-white/10 p-2 rounded-[2rem] backdrop-blur-2xl shadow-2xl shadow-black/40">
-          <div className="flex items-center gap-2 sm:gap-4 px-3 sm:px-4 py-1.5 sm:py-2">
-            <BsStars className="text-cyan-400 text-xl shrink-0" />
-            <input 
-              type="text" 
-              placeholder="Pergunte qualquer coisa sobre os indicadores..." 
-              className="w-full bg-transparent border-none text-white text-base sm:text-lg outline-none placeholder:text-slate-500 py-3 sm:py-4"
-            />
-            <button 
-              aria-label="Enviar pergunta"
-              className="p-4 bg-cyan-500 hover:bg-cyan-400 text-slate-950 rounded-2xl transition-all hover:scale-105 active:scale-95 shadow-lg shadow-cyan-500/20"
-            >
-              <BsSend size={20} />
-            </button>
+        <div className="hidden md:flex gap-4">
+          <div className="text-right">
+            <p className="text-[10px] text-slate-500 uppercase font-bold">Latência</p>
+            <p className="text-xs text-emerald-400 font-mono">24ms</p>
+          </div>
+          <div className="text-right border-l border-white/10 pl-4">
+            <p className="text-[10px] text-slate-500 uppercase font-bold">Modelo</p>
+            <p className="text-xs text-blue-400 font-mono">GPT-4-BIT</p>
           </div>
         </div>
       </div>
 
-      {/* Sugestões */}
-      <div className="space-y-6">
-        <div className="flex items-center gap-2 text-slate-400 px-2">
-          <BsLightningCharge className="text-amber-400" />
-          <span className="text-sm font-bold uppercase tracking-widest">Sugestões de Consulta</span>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {suggestions.map((text, i) => (
+      {/* Área de Chat */}
+      <div className="flex-1 overflow-y-auto space-y-6 pr-2 custom-scrollbar 
+        [&::-webkit-scrollbar]:w-2 
+        [&::-webkit-scrollbar-track]:bg-transparent 
+        [&::-webkit-scrollbar-thumb]:bg-slate-950 
+        [&::-webkit-scrollbar-thumb]:rounded-full
+        [scrollbar-width:thin] 
+        [scrollbar-color:theme(colors.slate.950)_transparent]"
+      >
+        {messages.map((msg, idx) => (
+          <div 
+            key={idx} 
+            className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-in fade-in slide-in-from-bottom-2`}
+          >
+            <div className={`max-w-[85%] md:max-w-[70%] group relative`}>
+              <div className={`p-4 rounded-2xl border backdrop-blur-xl transition-all ${
+                msg.role === 'user' 
+                  ? 'bg-blue-600/20 border-blue-500/30 text-white rounded-tr-none' 
+                  : 'bg-slate-900/60 border-white/10 text-slate-200 rounded-tl-none'
+              }`}>
+                <p className={`text-sm leading-relaxed ${msg.role === 'ai' ? 'font-light' : 'font-medium'}`}>
+                  {msg.content}
+                </p>
+                <div className="mt-2 flex items-center justify-between">
+                  <span className="text-[9px] font-mono text-slate-500 uppercase tracking-tighter">
+                    {msg.timestamp}
+                  </span>
+                  {msg.role === 'ai' && (
+                    <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <BsMagic className="text-cyan-500 cursor-pointer hover:scale-110" size={12} title="Refinar" />
+                      <BsTerminal className="text-slate-500 cursor-pointer hover:scale-110" size={12} title="Ver Logs" />
+                    </div>
+                  )}
+                </div>
+              </div>
+              {msg.role === 'ai' && <div className="absolute -left-2 top-0 w-1 h-full bg-cyan-500/50 blur-sm rounded-full" />}
+            </div>
+          </div>
+        ))}
+        <div ref={chatEndRef} />
+      </div>
+
+      {/* Sugestões e Input */}
+      <div className="space-y-4 pb-4">
+        <div className="flex flex-wrap gap-2">
+          {suggestions.map((s, i) => (
             <button 
               key={i}
-              className="text-left p-5 rounded-2xl bg-slate-900/40 border border-white/5 hover:border-cyan-500/30 hover:bg-slate-800/60 transition-all group"
+              title={s}
+              onClick={() => { setQuery(s); }}
+              className="px-3 py-1.5 bg-white/5 border border-white/10 rounded-full text-[10px] text-slate-400 hover:bg-cyan-500/10 hover:text-cyan-400 hover:border-cyan-500/30 transition-all flex items-center gap-2"
             >
-              <p className="text-slate-300 group-hover:text-white transition-colors flex items-start gap-3">
-                <BsQuestionCircle className="mt-1 text-cyan-500/50 group-hover:text-cyan-400 shrink-0" />
-                {text}
-              </p>
+              <BsLightbulb size={10} /> {s}
             </button>
           ))}
         </div>
-      </div>
 
-      {/* Info Card */}
-      <div className="p-6 rounded-3xl bg-blue-500/5 border border-blue-500/10 flex items-center gap-4">
-        <div className="h-10 w-10 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-400 shrink-0">
-          <BsLightningCharge />
-        </div>
-        <p className="text-sm text-slate-400 leading-relaxed">
-          A IA analisa automaticamente tabelas de indicadores, localizações geográficas e relatórios de progresso para fornecer respostas fundamentadas em evidências.
-        </p>
+        <form onSubmit={handleSend} className="relative group">
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-600/20 to-cyan-400/20 rounded-2xl blur opacity-0 group-focus-within:opacity-100 transition-opacity" />
+          <div className="relative flex items-center bg-slate-900 border border-white/20 rounded-2xl p-2 backdrop-blur-2xl">
+            <div className="pl-4 text-slate-500">
+              <BsCpu size={20} className={isTyping ? 'animate-spin' : ''} />
+            </div>
+            <input 
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder={isTyping ? "Aguarde o processamento..." : "Pergunte algo sobre os dados (ex: 'Qual a região com mais projetos?')"}
+              disabled={isTyping}
+              className="flex-1 bg-transparent border-none outline-none px-4 py-3 text-sm text-white placeholder:text-slate-600"
+            />
+            <button 
+              type="submit"
+              disabled={!query.trim() || isTyping}
+              aria-label="Enviar consulta"
+              title="Enviar consulta"
+              className="h-10 w-10 bg-blue-600 hover:bg-blue-500 disabled:bg-slate-800 disabled:text-slate-600 text-white rounded-xl flex items-center justify-center transition-all shadow-lg active:scale-90"
+            >
+              <BsSend size={18} />
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );

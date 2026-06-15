@@ -80,6 +80,7 @@ export default function Sidebar() {
       <button
         onClick={() => setIsOpen(!isOpen)}
         aria-label="Alternar Menu"
+        title="Alternar Menu"
         className="fixed z-40 p-2 m-2 md:hidden bg-blue-600 text-white rounded-lg hover:bg-blue-700"
       >
         ☰

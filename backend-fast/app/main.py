@@ -1,7 +1,12 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routers.auth import router as auth_router
-from routers.users import router as users_router
+from app.routers.auth import router as auth_router
+from app.routers.users import router as users_router
+from app.database import engine
+from app.models.base import Base
+from app.models.antena import Antena
+
+Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="App BiT API")
 

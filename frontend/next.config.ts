@@ -1,5 +1,7 @@
 import type { NextConfig } from "next";
 
+const backendUrl = process.env.BACKEND_INTERNAL_URL || 'http://localhost:8000';
+
 const nextConfig: NextConfig = {
   allowedDevOrigins: [
     "10.148.224.205",
@@ -8,11 +10,10 @@ const nextConfig: NextConfig = {
     return [
       {
         source: '/api/:path*',
-        destination: 'http://localhost:8000/api/:path*',
+        destination: `${backendUrl}/api/:path*`,
       },
     ];
   },
 };
 
 export default nextConfig;
-// export default nextConfig;

@@ -1,0 +1,33 @@
+services:
+
+  backend:
+    build:
+      context: ./backend-fast
+      dockerfile: Dockerfile
+    container_name: appbit-backend
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    volumes:
+      - ./backend-fast:/app
+    restart: unless-stopped
+
+  
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: appbit-frontend
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    environment:
+      - BACKEND_INTERNAL_URL=http://backend:8000
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+    restart: unless-stopped

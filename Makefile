@@ -1,17 +1,16 @@
-.PHONY: backend frontend dev install clean
+.PHONY: docker-up docker-down docker-build docker-logs docker-dev
 
-backend:
-	cd backend-fast && ./venv/bin/python -m uvicorn main:app --reload
+docker-up:
+	docker compose up -d
 
-frontend:
-	cd frontend && npm run dev
+docker-down:
+	docker compose down
 
-dev:
-	$(MAKE) -j2 backend frontend
+docker-build:
+	docker compose build --no-cache
 
-install:
-	cd backend-fast && ./venv/bin/pip install -r requirements.txt
-	cd frontend && npm install
+docker-logs:
+	docker compose logs -f
 
-clean:
-	rm -rf frontend/.next
+docker-dev:
+	docker compose up --build

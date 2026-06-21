@@ -1,6 +1,9 @@
 from datetime import datetime, timedelta, timezone
 from jose import jwt
 from passlib.context import CryptContext
+from sqlalchemy.orm import Session
+
+from app.repositories.user_repository import get_user_by_email, create_user
 
 # Chave secreta para gerar os tokens (em produção muda isto para uma chave segura)
 SECRET_KEY = "chave-secreta-do-appbit-2026"
@@ -8,10 +11,6 @@ ALGORITHM = "HS256"
 
 # Ferramenta para encriptar passwords
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
-# Base de dados em memória (lista de utilizadores)
-utilizadores = []
-proximo_id = 1
 
 
 def encriptar_password(password: str) -> str:
@@ -28,31 +27,30 @@ def criar_token(email: str) -> str:
     return jwt.encode(dados, SECRET_KEY, algorithm=ALGORITHM)
 
 
-def registar_utilizador(name: str, email: str, password: str) -> dict:
-    global proximo_id
-
+def registar_utilizador(
+    db: Session, name: str, email: str, password: str,
+    role: str = "GESTOR", organisation: str = "", country: str = ""
+) -> dict | None:
     # Verifica se o email já existe
-    for u in utilizadores:
-        if u["email"] == email:
-            return None  # já existe
+    existente = get_user_by_email(db, email)
+    if existente:
+        return None  # já existe
 
-    utilizador = {
-        "id": proximo_id,
-        "name": name,
-        "email": email,
-        "password": encriptar_password(password),
-        "role": "GESTOR",
-        "active": True,
-        "createdAt": datetime.now(timezone.utc).isoformat()
-    }
-    utilizadores.append(utilizador)
-    proximo_id += 1
-    return utilizador
+    hashed = encriptar_password(password)
+    user = create_user(
+        db=db,
+        name=name,
+        email=email,
+        hashed_password=hashed,
+        role=role,
+        organisation=organisation,
+        country=country,
+    )
+    return user
 
 
-def fazer_login(email: str, password: str) -> dict:
-    for u in utilizadores:
-        if u["email"] == email:
-            if verificar_password(password, u["password"]):
-                return u
+def fazer_login(db: Session, email: str, password: str):
+    user = get_user_by_email(db, email)
+    if user and verificar_password(password, user.password):
+        return user
     return None

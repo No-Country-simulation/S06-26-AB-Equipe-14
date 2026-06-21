@@ -1,6 +1,16 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
-from app.services.auth_service import registar_utilizador, encriptar_password, utilizadores
+from sqlalchemy.orm import Session
+
+from app.database import get_db
+from app.services.auth_service import encriptar_password, registar_utilizador
+from app.repositories.user_repository import (
+    get_all_users,
+    get_user_by_id,
+    update_user,
+    deactivate_user,
+    delete_user,
+)
 
 router = APIRouter(prefix="/api/users")
 
@@ -14,67 +24,77 @@ class UserRequest(BaseModel):
     country: str = ""
 
 
-@router.post("")
-def criar_utilizador(dados: UserRequest):
-    utilizador = registar_utilizador(dados.name, dados.email, dados.password)
-    if utilizador is None:
-        raise HTTPException(status_code=400, detail="Email já registado")
+def _user_to_dict(user) -> dict:
+    """Converte um User ORM para dicionário, omitindo a password."""
     return {
-        "id": utilizador["id"],
-        "name": utilizador["name"],
-        "email": utilizador["email"],
-        "role": dados.role,
-        "organisation": dados.organisation,
-        "country": dados.country,
-        "active": True,
-        "createdAt": utilizador["createdAt"]
+        "id": user.id,
+        "name": user.name,
+        "email": user.email,
+        "role": user.role,
+        "organisation": user.organisation,
+        "country": user.country,
+        "active": user.active,
+        "createdAt": user.created_at.isoformat() if user.created_at else None,
     }
 
 
+@router.post("")
+def criar_utilizador(dados: UserRequest, db: Session = Depends(get_db)):
+    utilizador = registar_utilizador(
+        db, dados.name, dados.email, dados.password,
+        role=dados.role, organisation=dados.organisation, country=dados.country
+    )
+    if utilizador is None:
+        raise HTTPException(status_code=400, detail="Email já registado")
+    return _user_to_dict(utilizador)
+
+
 @router.get("")
-def listar_utilizadores():
-    return [
-        {k: v for k, v in u.items() if k != "password"}
-        for u in utilizadores
-    ]
+def listar_utilizadores(db: Session = Depends(get_db)):
+    users = get_all_users(db)
+    return [_user_to_dict(u) for u in users]
 
 
 @router.get("/{id}")
-def ver_utilizador(id: int):
-    for u in utilizadores:
-        if u["id"] == id:
-            return {k: v for k, v in u.items() if k != "password"}
-    raise HTTPException(status_code=404, detail="Utilizador não encontrado")
+def ver_utilizador(id: int, db: Session = Depends(get_db)):
+    user = get_user_by_id(db, id)
+    if not user:
+        raise HTTPException(status_code=404, detail="Utilizador não encontrado")
+    return _user_to_dict(user)
 
 
 @router.put("/{id}")
-def actualizar_utilizador(id: int, dados: UserRequest):
-    for u in utilizadores:
-        if u["id"] == id:
-            u["name"] = dados.name
-            u["email"] = dados.email
-            u["role"] = dados.role
-            u["organisation"] = dados.organisation
-            u["country"] = dados.country
-            if dados.password:
-                u["password"] = encriptar_password(dados.password)
-            return {k: v for k, v in u.items() if k != "password"}
-    raise HTTPException(status_code=404, detail="Utilizador não encontrado")
+def actualizar_utilizador(id: int, dados: UserRequest, db: Session = Depends(get_db)):
+    user = get_user_by_id(db, id)
+    if not user:
+        raise HTTPException(status_code=404, detail="Utilizador não encontrado")
+
+    hashed_pw = encriptar_password(dados.password) if dados.password else None
+    updated = update_user(
+        db, user,
+        name=dados.name,
+        email=dados.email,
+        hashed_password=hashed_pw,
+        role=dados.role,
+        organisation=dados.organisation,
+        country=dados.country,
+    )
+    return _user_to_dict(updated)
 
 
 @router.patch("/{id}/deactivate")
-def desactivar_utilizador(id: int):
-    for u in utilizadores:
-        if u["id"] == id:
-            u["active"] = False
-            return {"mensagem": "Utilizador desactivado"}
-    raise HTTPException(status_code=404, detail="Utilizador não encontrado")
+def desactivar_utilizador(id: int, db: Session = Depends(get_db)):
+    user = get_user_by_id(db, id)
+    if not user:
+        raise HTTPException(status_code=404, detail="Utilizador não encontrado")
+    deactivate_user(db, user)
+    return {"mensagem": "Utilizador desactivado"}
 
 
 @router.delete("/{id}")
-def apagar_utilizador(id: int):
-    for i, u in enumerate(utilizadores):
-        if u["id"] == id:
-            utilizadores.pop(i)
-            return {"mensagem": "Utilizador apagado"}
-    raise HTTPException(status_code=404, detail="Utilizador não encontrado")
+def apagar_utilizador(id: int, db: Session = Depends(get_db)):
+    user = get_user_by_id(db, id)
+    if not user:
+        raise HTTPException(status_code=404, detail="Utilizador não encontrado")
+    delete_user(db, user)
+    return {"mensagem": "Utilizador apagado"}

@@ -5,6 +5,7 @@ from app.routers.users import router as users_router
 from app.database import engine
 from app.models.base import Base
 from app.models.antena import Antena
+from app.models.user import User
 
 from contextlib import asynccontextmanager
 

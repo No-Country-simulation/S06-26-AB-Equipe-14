@@ -14,3 +14,12 @@ SessionLocal = sessionmaker(
     autoflush=False,
     bind=engine
 )
+
+
+def get_db():
+    """Dependency que fornece uma sessão do banco de dados por request."""
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()

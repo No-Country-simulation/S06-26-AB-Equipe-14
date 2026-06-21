@@ -10,6 +10,7 @@ from app.models.base import Base
 
 
 from app.models.antena import Antena  
+from app.models.user import User
 
 
 

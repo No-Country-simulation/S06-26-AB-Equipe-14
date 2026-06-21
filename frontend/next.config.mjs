@@ -1,8 +1,7 @@
-import type { NextConfig } from "next";
-
 const backendUrl = process.env.BACKEND_INTERNAL_URL || 'http://localhost:8000';
 
-const nextConfig: NextConfig = {
+/** @type {import('next').NextConfig} */
+const nextConfig = {
   allowedDevOrigins: [
     "10.148.224.205",
   ],

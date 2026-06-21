@@ -7,27 +7,37 @@ services:
     container_name: appbit-backend
     ports:
       - "8000:8000"
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
     env_file:
       - .env
     volumes:
       - ./backend-fast:/app
+    command: >
+      sh -c "python scripts/migrate.py && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
     restart: unless-stopped
 
-  
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
     container_name: appbit-frontend
     ports:
-      - "3000:3000"
+      - "3003:3003"
     env_file:
       - .env
     environment:
       - BACKEND_INTERNAL_URL=http://backend:8000
     volumes:
       - ./frontend:/app
-      - /app/node_modules
+      - frontend_node_modules:/app/node_modules
+    command: npm run dev -- -p 3003
+    tty: true
+    stdin_open: true
+    restart: unless-stopped
     depends_on:
       - backend
-    restart: unless-stopped
+
+volumes:
+  frontend_node_modules:

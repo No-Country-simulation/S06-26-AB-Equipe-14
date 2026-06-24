@@ -1,4 +1,4 @@
-.PHONY: docker-up docker-down docker-clean docker-build docker-logs docker-dev db-migrate db-migrate-local
+.PHONY: docker-up docker-down docker-clean docker-build docker-logs docker-dev db-migrate db-migrate-local db-seed db-seed-local
 
 docker-up:
 	docker compose up -d
@@ -24,3 +24,9 @@ db-migrate:
 
 db-migrate-local:
 	cd backend-fast && python scripts/migrate.py
+
+db-seed:
+	docker compose exec backend python scripts/seed_data.py
+
+db-seed-local:
+	cd backend-fast && python scripts/seed_data.py

@@ -6,6 +6,12 @@ from app.database import engine
 from app.models.base import Base
 from app.models.antena import Antena
 from app.models.user import User
+from app.models.assinantes import Assinante
+from app.models.tensor_concentracao import TensorConcentracao
+from app.models.tensor_fluxo_vias import TensorFluxoVias
+from app.models.tensor_od import TensorOD
+from app.models.tensor_tempo_deslocamento import TensorTempoDeslocamento
+from app.models.trajetos_comuns import TrajetosComuns
 
 from contextlib import asynccontextmanager
 

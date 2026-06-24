@@ -66,7 +66,7 @@ export default function ReportsContent() {
             >
               <div className="flex items-center gap-2 mb-2">
                 <div className={`p-1.5 rounded-lg bg-white/5 ${stat.color} group-hover:scale-110 transition-transform duration-300`}>
-                  {stat.icon}
+                   {stat.icon}
                 </div>
                 <p className="text-slate-400 text-[0.65rem] font-medium tracking-wide uppercase">{stat.label}</p>
               </div>

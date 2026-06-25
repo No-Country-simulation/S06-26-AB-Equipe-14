@@ -1,4 +1,4 @@
-.PHONY: docker-up docker-down docker-clean docker-build docker-logs docker-dev db-migrate db-migrate-local db-seed db-seed-local
+.PHONY: docker-up docker-down docker-clean docker-build docker-logs docker-dev db-migrate db-migrate-local db-seed db-seed-local npm-install pip-install
 
 docker-up:
 	docker compose up -d
@@ -30,3 +30,17 @@ db-seed:
 
 db-seed-local:
 	cd backend-fast && python scripts/seed_data.py
+
+npm-install:
+	@if [ -z "$(pkg)" ]; then \
+		docker compose exec frontend npm install --no-audit --no-fund; \
+	else \
+		docker compose exec frontend npm install $(pkg) --no-audit --no-fund; \
+	fi
+
+pip-install:
+	@if [ -z "$(pkg)" ]; then \
+		docker compose exec backend pip install -r requirements.txt; \
+	else \
+		docker compose exec backend pip install $(pkg); \
+	fi

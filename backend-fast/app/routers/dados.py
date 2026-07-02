@@ -11,39 +11,8 @@ from app.models.tensor_tempo_deslocamento import TensorTempoDeslocamento
 from app.models.trajetos_comuns import TrajetosComuns
 
 from app.database import get_db
-from app.schemas import DadosRequest, DadosResponse
-from app.services.visent_service import VisentService
-from app.services.cohere_service import CohereService
 
 router = APIRouter(prefix="/api/dados")
-
-
-cohere_service = CohereService()
-
-@router.post("", response_model=DadosResponse)
-def consultar_dados(request: DadosRequest, db: Session = Depends(get_db)):
-    visent_service = VisentService(db)
-    
-   
-    filtros_dict = request.filtros.model_dump() if request.filtros else None
-    documentos = visent_service.get_contexto_para_ia(
-        consulta=request.consulta,
-        filtros=filtros_dict
-    )
-    
-    
-    resultado = cohere_service.consultar(
-        consulta=request.consulta,
-        documentos=documentos,
-        idioma=request.idioma or "pt"
-    )
-    
-    return DadosResponse(
-        resposta_ia=resultado["resposta_ia"],
-        dados=resultado["dados"],
-        fontes=resultado["fontes"]
-    )
-
 
 def _antena_to_dict(a: Antena) -> dict:
     """Converte a tabela para dicionário"""

@@ -125,8 +125,8 @@ class VisentService:
                     "total_sessoes": int(r.total_sessoes) if r.total_sessoes else 0,
                     "congestionamento_medio": round(r.congestionamento_avg, 4) if r.congestionamento_avg else None,
                     "drop_medio": round(r.drop_avg, 4) if r.drop_avg else None,
-                    "download_total_gb": round(r.download_total / 1e9, 2) if r.download_total else 0,
-                    "upload_total_gb": round(r.upload_total / 1e9, 2) if r.upload_total else 0,
+                    "download_total_gb": round(float(r.download_total) / 1e9, 2) if r.download_total else 0,
+                    "upload_total_gb": round(float(r.upload_total) / 1e9, 2) if r.upload_total else 0,
                     "municipio": r.municipio,
                 },
             })

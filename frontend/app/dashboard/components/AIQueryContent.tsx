@@ -107,7 +107,7 @@ export default function AIQueryContent() {
           </div>
           <div className="text-right border-l border-white/10 pl-4">
             <p className="text-[10px] text-slate-500 uppercase font-bold">Modelo</p>
-            <p className="text-xs text-blue-400 font-mono">GPT-4-BIT</p>
+            <p className="text-xs text-blue-400 font-mono">command-r-plus-08-2024</p>
           </div>
         </div>
       </div>

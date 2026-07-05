@@ -8,7 +8,6 @@ router = APIRouter(prefix="/api/mapa")
 
 @router.get("", response_model=MapaResponse)
 def obter_mapa(db: Session = Depends(get_db)):
-    
     visent_service = VisentService(db)
     regioes = visent_service.get_mapa_regioes()
     return MapaResponse(regioes=regioes)

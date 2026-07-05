@@ -71,7 +71,7 @@ def stats_fluxo_vias(
     service = VisentService(db)
     return service.get_stats_fluxo_vias(regiao)
 
-@router.get("/od", response_model=ODStats)
+@router.get("/tensorod", response_model=ODStats)
 def stats_od(
     regiao: Optional[str] = None,
     db: Session = Depends(get_db)

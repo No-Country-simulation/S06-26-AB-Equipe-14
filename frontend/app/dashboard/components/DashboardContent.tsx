@@ -8,8 +8,28 @@ import {
   BsShieldLock,
   BsExclamationTriangle,
   BsClockHistory,
+  BsBroadcastPin,
+  BsGraphUp,
+  BsClock,
+  BsArrowLeftRight,
+  BsPersonBadge,
+  BsCashStack,
+  BsSignpost,
 } from 'react-icons/bs';
 import { getDashboardStats, type DashboardStats } from '@/services/dashboardService';
+import {
+  dadosApi,
+  antenasPorTecnologia,
+  concentracaoPorMunicipio,
+  concentracaoPorPeriodo,
+  topFluxos,
+  assinantesPorAgeGroup,
+  assinantesPorIncome,
+  assinantesPorMobilidade,
+  type CategoryDatum,
+} from '@/services/dadosService';
+import ChartCard from './charts/ChartCard';
+import { CategoryBarChart, CategoryLineChart, CategoryPieChart } from './charts/Charts';
 
 function formatDate(iso?: string): string {
   if (!iso) return '—';
@@ -25,21 +45,67 @@ function formatDate(iso?: string): string {
   }
 }
 
+/* Agregações dos dados de domínio para os gráficos. */
+interface DomainCharts {
+  antenasTecnologia: CategoryDatum[];
+  concMunicipio: CategoryDatum[];
+  concPeriodo: CategoryDatum[];
+  fluxos: CategoryDatum[];
+  ageGroup: CategoryDatum[];
+  income: CategoryDatum[];
+  mobilidade: CategoryDatum[];
+}
+
+const EMPTY_DOMAIN: DomainCharts = {
+  antenasTecnologia: [],
+  concMunicipio: [],
+  concPeriodo: [],
+  fluxos: [],
+  ageGroup: [],
+  income: [],
+  mobilidade: [],
+};
+
 export default function DashboardContent() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [domain, setDomain] = useState<DomainCharts>(EMPTY_DOMAIN);
   const [loading, setLoading] = useState(true);
+  const [domainLoading, setDomainLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let alive = true;
+
     getDashboardStats()
       .then((data) => {
         if (!alive) return;
         setStats(data);
         setError(null);
       })
-      .catch(() => alive && setError('Não foi possível carregar os dados do servidor.'))
+      .catch(() => alive && setError('Não foi possível carregar os dados de utilizadores.'))
       .finally(() => alive && setLoading(false));
+
+    // Dados de domínio (mobilidade/telecom + assinantes) — falham em silêncio.
+    Promise.all([
+      dadosApi.antenas(),
+      dadosApi.concentracao(),
+      dadosApi.fluxoVias(),
+      dadosApi.assinantes(),
+    ])
+      .then(([antenas, conc, fluxos, assinantes]) => {
+        if (!alive) return;
+        setDomain({
+          antenasTecnologia: antenasPorTecnologia(antenas),
+          concMunicipio: concentracaoPorMunicipio(conc),
+          concPeriodo: concentracaoPorPeriodo(conc),
+          fluxos: topFluxos(fluxos),
+          ageGroup: assinantesPorAgeGroup(assinantes),
+          income: assinantesPorIncome(assinantes),
+          mobilidade: assinantesPorMobilidade(assinantes),
+        });
+      })
+      .finally(() => alive && setDomainLoading(false));
+
     return () => {
       alive = false;
     };
@@ -86,7 +152,9 @@ export default function DashboardContent() {
       ]
     : [];
 
-  const maxRole = stats ? Math.max(...stats.byRole.map((r) => r.count), 1) : 1;
+  const roleData: CategoryDatum[] = stats
+    ? stats.byRole.map((r) => ({ label: r.role, value: r.count }))
+    : [];
 
   return (
     <div className="px-4 sm:px-8 pb-8 pt-4 space-y-6 sm:space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -98,100 +166,176 @@ export default function DashboardContent() {
         </div>
       )}
 
-      {/* Grid de Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-        {loading
-          ? Array.from({ length: 4 }).map((_, i) => (
-              <div
-                key={i}
-                className="h-[92px] bg-slate-900/50 border border-white/10 rounded-xl animate-pulse"
-              />
-            ))
-          : cards.map((stat) => (
-              <div
-                key={stat.id}
-                className={`relative group overflow-hidden bg-slate-900/50 border border-white/20 p-4 rounded-xl backdrop-blur-xl transition-all hover:bg-slate-800/60 hover:border-white/30 shadow-xl ${stat.glow}`}
-              >
-                <div className="flex items-center gap-2 mb-2">
-                  <div className={`p-1.5 rounded-lg bg-white/5 ${stat.color} group-hover:scale-110 transition-transform duration-300`}>
-                    {stat.icon}
+      {/* ============ SECÇÃO: UTILIZADORES ============ */}
+      <section className="space-y-4 sm:space-y-6">
+        {/* Grid de Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+          {loading
+            ? Array.from({ length: 4 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="h-[92px] bg-slate-900/50 border border-white/10 rounded-xl animate-pulse"
+                />
+              ))
+            : cards.map((stat) => (
+                <div
+                  key={stat.id}
+                  className={`relative group overflow-hidden bg-slate-900/50 border border-white/20 p-4 rounded-xl backdrop-blur-xl transition-all hover:bg-slate-800/60 hover:border-white/30 shadow-xl ${stat.glow}`}
+                >
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className={`p-1.5 rounded-lg bg-white/5 ${stat.color} group-hover:scale-110 transition-transform duration-300`}>
+                      {stat.icon}
+                    </div>
+                    <p className="text-slate-400 text-[0.65rem] font-medium tracking-wide uppercase">{stat.label}</p>
                   </div>
-                  <p className="text-slate-400 text-[0.65rem] font-medium tracking-wide uppercase">{stat.label}</p>
+                  <h3 className="text-lg sm:text-xl font-bold text-white">{stat.value}</h3>
+                  <div className={`absolute bottom-0 left-0 right-0 h-1 ${stat.barColor} opacity-70 group-hover:opacity-100 transition-opacity`} />
                 </div>
-                <h3 className="text-lg sm:text-xl font-bold text-white">{stat.value}</h3>
-                <div className={`absolute bottom-0 left-0 right-0 h-1 ${stat.barColor} opacity-70 group-hover:opacity-100 transition-opacity`} />
+              ))}
+        </div>
+
+        {/* Distribuição por função + Atividade recente */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <ChartCard
+            title="Distribuição por Função"
+            subtitle="Utilizadores agrupados por role"
+            icon={<BsShieldLock />}
+            className="lg:col-span-2"
+            loading={loading}
+            empty={roleData.length === 0}
+            emptyLabel="Sem dados de utilizadores."
+          >
+            <CategoryBarChart data={roleData} />
+          </ChartCard>
+
+          {/* Atividade recente */}
+          <div className="bg-slate-900/40 border border-white/10 rounded-3xl p-6 backdrop-blur-xl shadow-xl">
+            <div className="flex items-center gap-2 mb-5">
+              <BsClockHistory className="text-cyan-400" />
+              <h4 className="text-white font-semibold">Atividade Recente</h4>
+            </div>
+
+            {loading ? (
+              <div className="space-y-3">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="h-10 bg-slate-800/60 rounded-xl animate-pulse" />
+                ))}
               </div>
-            ))}
-      </div>
-
-      {/* Gráfico (por função) + Atividades recentes */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {/* Distribuição por função */}
-        <div className="md:col-span-2 bg-slate-900/40 border border-white/10 rounded-3xl p-6 backdrop-blur-xl shadow-xl">
-          <h4 className="text-white font-semibold mb-1">Distribuição por Função</h4>
-          <p className="text-xs text-slate-500 mb-5">Utilizadores agrupados por role</p>
-
-          {loading ? (
-            <div className="space-y-4">
-              {Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="h-6 bg-slate-800/60 rounded-lg animate-pulse" />
-              ))}
-            </div>
-          ) : stats && stats.byRole.length > 0 ? (
-            <div className="space-y-4">
-              {stats.byRole.map((r) => (
-                <div key={r.role} className="space-y-1.5">
-                  <div className="flex justify-between text-xs">
-                    <span className="text-slate-300 font-medium uppercase tracking-wide">{r.role}</span>
-                    <span className="text-slate-500 font-mono">{r.count}</span>
-                  </div>
-                  <div className="h-2.5 bg-slate-800/80 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-gradient-to-r from-blue-500 to-cyan-400 rounded-full transition-all duration-700"
-                      style={{ width: `${(r.count / maxRole) * 100}%` }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-slate-500 italic text-sm">Sem dados de utilizadores.</p>
-          )}
-        </div>
-
-        {/* Atividades recentes (últimos cadastros) */}
-        <div className="bg-slate-900/40 border border-white/10 rounded-3xl p-6 backdrop-blur-xl shadow-xl">
-          <div className="flex items-center gap-2 mb-5">
-            <BsClockHistory className="text-cyan-400" />
-            <h4 className="text-white font-semibold">Atividade Recente</h4>
+            ) : stats && stats.recentUsers.length > 0 ? (
+              <ul className="space-y-3">
+                {stats.recentUsers.map((u) => (
+                  <li key={u.id} className="flex items-center gap-3">
+                    <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-cyan-500/20 to-blue-500/20 ring-1 ring-cyan-500/30 flex items-center justify-center text-cyan-300 font-bold text-xs shrink-0">
+                      {u.name?.[0]?.toUpperCase() ?? 'U'}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm text-slate-200 truncate">{u.name}</p>
+                      <p className="text-[11px] text-slate-500 truncate">{u.email}</p>
+                    </div>
+                    <span className="text-[10px] text-slate-600 font-mono shrink-0">{formatDate(u.createdAt)}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-slate-500 italic text-sm">Sem atividade recente.</p>
+            )}
           </div>
-
-          {loading ? (
-            <div className="space-y-3">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="h-10 bg-slate-800/60 rounded-xl animate-pulse" />
-              ))}
-            </div>
-          ) : stats && stats.recentUsers.length > 0 ? (
-            <ul className="space-y-3">
-              {stats.recentUsers.map((u) => (
-                <li key={u.id} className="flex items-center gap-3">
-                  <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-cyan-500/20 to-blue-500/20 ring-1 ring-cyan-500/30 flex items-center justify-center text-cyan-300 font-bold text-xs shrink-0">
-                    {u.name?.[0]?.toUpperCase() ?? 'U'}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm text-slate-200 truncate">{u.name}</p>
-                    <p className="text-[11px] text-slate-500 truncate">{u.email}</p>
-                  </div>
-                  <span className="text-[10px] text-slate-600 font-mono shrink-0">{formatDate(u.createdAt)}</span>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-slate-500 italic text-sm">Sem atividade recente.</p>
-          )}
         </div>
-      </div>
+      </section>
+
+      {/* ============ SECÇÃO: MOBILIDADE / TELECOM ============ */}
+      <section className="space-y-4 sm:space-y-6">
+        <div className="flex items-center gap-2">
+          <BsBroadcastPin className="text-cyan-400" />
+          <h3 className="text-white font-bold tracking-tight">Mobilidade & Rede</h3>
+          <span className="text-[10px] text-slate-500 font-mono uppercase tracking-widest">Visent Coreview</span>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <ChartCard
+            title="Concentração por Município"
+            subtitle="Utilizadores únicos (top 8)"
+            icon={<BsGraphUp />}
+            className="lg:col-span-2"
+            loading={domainLoading}
+            empty={domain.concMunicipio.length === 0}
+          >
+            <CategoryBarChart data={domain.concMunicipio} horizontal />
+          </ChartCard>
+
+          <ChartCard
+            title="Antenas por Tecnologia"
+            subtitle="Distribuição da rede"
+            icon={<BsBroadcastPin />}
+            loading={domainLoading}
+            empty={domain.antenasTecnologia.length === 0}
+          >
+            <CategoryPieChart data={domain.antenasTecnologia} />
+          </ChartCard>
+
+          <ChartCard
+            title="Atividade por Período"
+            subtitle="Utilizadores ao longo do dia"
+            icon={<BsClock />}
+            loading={domainLoading}
+            empty={domain.concPeriodo.length === 0}
+          >
+            <CategoryLineChart data={domain.concPeriodo} />
+          </ChartCard>
+
+          <ChartCard
+            title="Principais Fluxos (OD)"
+            subtitle="Origem → destino por transições"
+            icon={<BsArrowLeftRight />}
+            className="lg:col-span-2"
+            loading={domainLoading}
+            empty={domain.fluxos.length === 0}
+          >
+            <CategoryBarChart data={domain.fluxos} horizontal color="#a855f7" />
+          </ChartCard>
+        </div>
+      </section>
+
+      {/* ============ SECÇÃO: ASSINANTES (DEMOGRAFIA) ============ */}
+      <section className="space-y-4 sm:space-y-6">
+        <div className="flex items-center gap-2">
+          <BsPersonBadge className="text-cyan-400" />
+          <h3 className="text-white font-bold tracking-tight">Assinantes</h3>
+          <span className="text-[10px] text-slate-500 font-mono uppercase tracking-widest">Demografia</span>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <ChartCard
+            title="Faixa Etária"
+            subtitle="Assinantes por age group"
+            icon={<BsPeople />}
+            loading={domainLoading}
+            empty={domain.ageGroup.length === 0}
+          >
+            <CategoryBarChart data={domain.ageGroup} />
+          </ChartCard>
+
+          <ChartCard
+            title="Cluster de Rendimento"
+            subtitle="Assinantes por income cluster"
+            icon={<BsCashStack />}
+            loading={domainLoading}
+            empty={domain.income.length === 0}
+          >
+            <CategoryPieChart data={domain.income} />
+          </ChartCard>
+
+          <ChartCard
+            title="Padrão de Mobilidade"
+            subtitle="Assinantes por mobility pattern"
+            icon={<BsSignpost />}
+            loading={domainLoading}
+            empty={domain.mobilidade.length === 0}
+          >
+            <CategoryBarChart data={domain.mobilidade} color="#10b981" />
+          </ChartCard>
+        </div>
+      </section>
     </div>
   );
 }

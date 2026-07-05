@@ -340,7 +340,238 @@ class VisentService:
             "por_idade": {r.age_group: r.count for r in by_age},
         }
 
-  
+    def get_stats_assinantes(self, regiao: Optional[str] = None) -> dict:
+        q = self.db.query(func.count(Assinante.assinante_hash))
+        if regiao:
+            q = q.filter(Assinante.home_cluster == regiao)
+        total = q.scalar() or 0
+
+        def _group_count(col):
+            qry = self.db.query(col, func.count(Assinante.assinante_hash).label("count"))
+            if regiao:
+                qry = qry.filter(Assinante.home_cluster == regiao)
+            return {r[0]: r[1] for r in qry.group_by(col).all()}
+
+        return {
+            "total": total,
+            "por_idade": _group_count(Assinante.age_group),
+            "por_renda": _group_count(Assinante.income_cluster),
+            "por_mobilidade": _group_count(Assinante.mobility_pattern),
+            "por_cluster": _group_count(Assinante.home_cluster),
+            "por_municipio": _group_count(Assinante.home_municipio),
+        }
+
+    def get_stats_antenas(self, regiao: Optional[str] = None) -> dict:
+        q = self.db.query(func.count(Antena.ecgi))
+        if regiao:
+            q = q.filter(Antena.cluster == regiao)
+        total = q.scalar() or 0
+
+        def _group_count(col):
+            qry = self.db.query(col, func.count(Antena.ecgi).label("count"))
+            if regiao:
+                qry = qry.filter(Antena.cluster == regiao)
+            return {r[0]: r[1] for r in qry.group_by(col).all() if r[0] is not None}
+
+        return {
+            "total": total,
+            "por_tecnologia": _group_count(Antena.tecnologia),
+            "por_municipio": _group_count(Antena.municipio),
+            "por_cluster": _group_count(Antena.cluster),
+        }
+
+    def get_stats_concentracao(self, regiao: Optional[str] = None) -> dict:
+        filters = []
+        if regiao:
+            filters.append(TensorConcentracao.cluster == regiao)
+
+        totals = (
+            self.db.query(
+                func.sum(TensorConcentracao.n_usuarios).label("total_usuarios"),
+                func.sum(TensorConcentracao.n_sessoes).label("total_sessoes"),
+                func.sum(TensorConcentracao.download_bytes).label("total_download"),
+                func.sum(TensorConcentracao.upload_bytes).label("total_upload"),
+                func.sum(TensorConcentracao.chamadas_total).label("total_chamadas"),
+                func.sum(TensorConcentracao.mensagens_total).label("total_mensagens"),
+                func.avg(TensorConcentracao.congestionamento_medio).label("congest_medio"),
+                func.avg(TensorConcentracao.drop_pct_medio).label("drop_medio"),
+            )
+            .filter(*filters)
+            .first()
+        )
+
+        def _group_sum(col):
+            qry = self.db.query(col, func.sum(TensorConcentracao.n_usuarios).label("total"))
+            if regiao:
+                qry = qry.filter(TensorConcentracao.cluster == regiao)
+            return {r[0]: int(r[1]) for r in qry.group_by(col).all()}
+
+        return {
+            "total_usuarios": int(totals.total_usuarios or 0),
+            "total_sessoes": int(totals.total_sessoes or 0),
+            "total_download_gb": round(float(totals.total_download or 0) / 1e9, 2),
+            "total_upload_gb": round(float(totals.total_upload or 0) / 1e9, 2),
+            "total_chamadas": int(totals.total_chamadas or 0),
+            "total_mensagens": int(totals.total_mensagens or 0),
+            "congestionamento_medio": round(float(totals.congest_medio), 4) if totals.congest_medio else None,
+            "drop_medio": round(float(totals.drop_medio), 4) if totals.drop_medio else None,
+            "por_cluster": _group_sum(TensorConcentracao.cluster),
+            "por_municipio": _group_sum(TensorConcentracao.municipio),
+            "por_periodo": _group_sum(TensorConcentracao.periodo),
+        }
+
+    def get_stats_fluxo_vias(self, regiao: Optional[str] = None) -> dict:
+        filters = []
+        if regiao:
+            filters.append(
+                (TensorFluxoVias.cluster_origem == regiao)
+                | (TensorFluxoVias.cluster_destino == regiao)
+            )
+
+        totals = (
+            self.db.query(
+                func.sum(TensorFluxoVias.n_usuarios).label("total_usuarios"),
+                func.sum(TensorFluxoVias.n_transicoes).label("total_transicoes"),
+                func.avg(TensorFluxoVias.dist_km).label("dist_media"),
+            )
+            .filter(*filters)
+            .first()
+        )
+
+        def _group_sum_str(col):
+            qry = self.db.query(col, func.sum(TensorFluxoVias.n_usuarios).label("total"))
+            if regiao:
+                qry = qry.filter(
+                    (TensorFluxoVias.cluster_origem == regiao)
+                    | (TensorFluxoVias.cluster_destino == regiao)
+                )
+            return {r[0]: int(r[1]) for r in qry.group_by(col).all() if r[0] is not None}
+
+        return {
+            "total_usuarios": int(totals.total_usuarios or 0),
+            "total_transicoes": int(totals.total_transicoes or 0),
+            "dist_media_km": round(float(totals.dist_media), 2) if totals.dist_media else None,
+            "por_periodo": _group_sum_str(TensorFluxoVias.periodo_predominante),
+            "por_cluster_origem": _group_sum_str(TensorFluxoVias.cluster_origem),
+            "por_cluster_destino": _group_sum_str(TensorFluxoVias.cluster_destino),
+        }
+
+    def get_stats_od(self, regiao: Optional[str] = None) -> dict:
+        filters = []
+        if regiao:
+            filters.append(
+                (TensorOD.cluster_origem == regiao)
+                | (TensorOD.cluster_destino == regiao)
+            )
+
+        totals = (
+            self.db.query(
+                func.sum(TensorOD.n_usuarios).label("total_usuarios"),
+                func.sum(TensorOD.n_viagens).label("total_viagens"),
+                func.avg(TensorOD.dist_media_km).label("dist_media"),
+                func.sum(TensorOD.mesmo_cluster).label("total_mesmo"),
+            )
+            .filter(*filters)
+            .first()
+        )
+
+        total_usuarios = int(totals.total_usuarios or 0)
+
+        def _group_sum_od(col):
+            qry = self.db.query(col, func.sum(TensorOD.n_usuarios).label("total"))
+            if regiao:
+                qry = qry.filter(
+                    (TensorOD.cluster_origem == regiao)
+                    | (TensorOD.cluster_destino == regiao)
+                )
+            return {r[0]: int(r[1]) for r in qry.group_by(col).all() if r[0] is not None}
+
+        return {
+            "total_usuarios": total_usuarios,
+            "total_viagens": int(totals.total_viagens or 0),
+            "dist_media_km": round(float(totals.dist_media), 2) if totals.dist_media else None,
+            "total_mesmo_cluster": int(totals.total_mesmo or 0),
+            "total_diferente_cluster": total_usuarios - int(totals.total_mesmo or 0),
+            "por_periodo": _group_sum_od(TensorOD.periodo_predominante),
+            "por_cluster_origem": _group_sum_od(TensorOD.cluster_origem),
+            "por_cluster_destino": _group_sum_od(TensorOD.cluster_destino),
+        }
+
+    def get_stats_tempo_deslocamento(self, regiao: Optional[str] = None) -> dict:
+        filters = []
+        if regiao:
+            filters.append(
+                (TensorTempoDeslocamento.cluster_origem == regiao)
+                | (TensorTempoDeslocamento.cluster_destino == regiao)
+            )
+
+        totals = (
+            self.db.query(
+                func.sum(TensorTempoDeslocamento.n_observacoes).label("total_obs"),
+                func.avg(TensorTempoDeslocamento.dist_media_km).label("dist_media"),
+                func.avg(TensorTempoDeslocamento.dist_p25_km).label("p25"),
+                func.avg(TensorTempoDeslocamento.dist_p75_km).label("p75"),
+            )
+            .filter(*filters)
+            .first()
+        )
+
+        def _group_sum_tempo(col):
+            qry = self.db.query(col, func.sum(TensorTempoDeslocamento.n_observacoes).label("total"))
+            if regiao:
+                qry = qry.filter(
+                    (TensorTempoDeslocamento.cluster_origem == regiao)
+                    | (TensorTempoDeslocamento.cluster_destino == regiao)
+                )
+            return {r[0]: int(r[1]) for r in qry.group_by(col).all() if r[0] is not None}
+
+        return {
+            "total_observacoes": int(totals.total_obs or 0),
+            "dist_media_km": round(float(totals.dist_media), 2) if totals.dist_media else None,
+            "dist_p25_km": round(float(totals.p25), 2) if totals.p25 else None,
+            "dist_p75_km": round(float(totals.p75), 2) if totals.p75 else None,
+            "por_periodo": _group_sum_tempo(TensorTempoDeslocamento.periodo_predominante),
+            "por_cluster_origem": _group_sum_tempo(TensorTempoDeslocamento.cluster_origem),
+            "por_cluster_destino": _group_sum_tempo(TensorTempoDeslocamento.cluster_destino),
+        }
+
+    def get_stats_trajetos_comuns(self, regiao: Optional[str] = None) -> dict:
+        filters = []
+        if regiao:
+            filters.append(
+                (TrajetosComuns.cluster_origem == regiao)
+                | (TrajetosComuns.cluster_destino == regiao)
+            )
+
+        totals = (
+            self.db.query(
+                func.sum(TrajetosComuns.n_usuarios).label("total_usuarios"),
+                func.sum(TrajetosComuns.n_viagens).label("total_viagens"),
+                func.avg(TrajetosComuns.dist_media_km).label("dist_media"),
+            )
+            .filter(*filters)
+            .first()
+        )
+
+        def _group_sum_traj(col):
+            qry = self.db.query(col, func.sum(TrajetosComuns.n_usuarios).label("total"))
+            if regiao:
+                qry = qry.filter(
+                    (TrajetosComuns.cluster_origem == regiao)
+                    | (TrajetosComuns.cluster_destino == regiao)
+                )
+            return {r[0]: int(r[1]) for r in qry.group_by(col).all() if r[0] is not None}
+
+        return {
+            "total_usuarios": int(totals.total_usuarios or 0),
+            "total_viagens": int(totals.total_viagens or 0),
+            "dist_media_km": round(float(totals.dist_media), 2) if totals.dist_media else None,
+            "por_periodo": _group_sum_traj(TrajetosComuns.periodo_predominante),
+            "por_cluster_origem": _group_sum_traj(TrajetosComuns.cluster_origem),
+            "por_cluster_destino": _group_sum_traj(TrajetosComuns.cluster_destino),
+        }
+
+   
     # Métodos para dados por indicador
 
     def _dados_concentracao(self, regiao: Optional[str]) -> list[dict]:

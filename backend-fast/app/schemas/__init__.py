@@ -69,3 +69,72 @@ class ConcentracaoOut(BaseModel):
     n_sessoes:  Optional[int] = None
 
     model_config = {"from_attributes": True}
+
+
+class AssinantesStats(BaseModel):
+    total: int
+    por_idade: dict[str, int]
+    por_renda: dict[str, int]
+    por_mobilidade: dict[str, int]
+    por_cluster: dict[str, int]
+    por_municipio: dict[str, int]
+
+
+class AntenasStats(BaseModel):
+    total: int
+    por_tecnologia: dict[str, int]
+    por_municipio: dict[str, int]
+    por_cluster: dict[str, int]
+
+
+class ConcentracaoStats(BaseModel):
+    total_usuarios: int
+    total_sessoes: int
+    total_download_gb: float
+    total_upload_gb: float
+    total_chamadas: int
+    total_mensagens: int
+    congestionamento_medio: Optional[float] = None
+    drop_medio: Optional[float] = None
+    por_cluster: dict[str, int]
+    por_municipio: dict[str, int]
+    por_periodo: dict[str, int]
+
+
+class FluxoViasStats(BaseModel):
+    total_usuarios: int
+    total_transicoes: int
+    dist_media_km: Optional[float] = None
+    por_periodo: dict[str, int]
+    por_cluster_origem: dict[str, int]
+    por_cluster_destino: dict[str, int]
+
+
+class ODStats(BaseModel):
+    total_usuarios: int
+    total_viagens: int
+    dist_media_km: Optional[float] = None
+    total_mesmo_cluster: int
+    total_diferente_cluster: int
+    por_periodo: dict[str, int]
+    por_cluster_origem: dict[str, int]
+    por_cluster_destino: dict[str, int]
+
+
+class TempoDeslocamentoStats(BaseModel):
+    total_observacoes: int
+    dist_media_km: Optional[float] = None
+    dist_p25_km: Optional[float] = None
+    dist_p75_km: Optional[float] = None
+    por_periodo: dict[str, int]
+    por_cluster_origem: dict[str, int]
+    por_cluster_destino: dict[str, int]
+
+
+class TrajetosComunsStats(BaseModel):
+    total_usuarios: int
+    total_viagens: int
+    dist_media_km: Optional[float] = None
+    por_periodo: dict[str, int]
+    por_cluster_origem: dict[str, int]
+    por_cluster_destino: dict[str, int]

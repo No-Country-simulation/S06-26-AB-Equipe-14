@@ -55,7 +55,7 @@ def stats_antenas(
     service = VisentService(db)
     return service.get_stats_antenas(regiao)
 
-@router.get("/concentracao", response_model=ConcentracaoStats)
+@router.get("/tensor_concentracao", response_model=ConcentracaoStats)
 def stats_concentracao(
     regiao: Optional[str] = None,
     db: Session = Depends(get_db)
@@ -63,7 +63,7 @@ def stats_concentracao(
     service = VisentService(db)
     return service.get_stats_concentracao(regiao)
 
-@router.get("/fluxo_vias", response_model=FluxoViasStats)
+@router.get("/tensor_fluxovias", response_model=FluxoViasStats)
 def stats_fluxo_vias(
     regiao: Optional[str] = None,
     db: Session = Depends(get_db)

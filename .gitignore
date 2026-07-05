@@ -19,7 +19,7 @@ __pycache__/
 
 venv/
 backend-fast/venv/
-
+supabase/
 
 dist/
 build/

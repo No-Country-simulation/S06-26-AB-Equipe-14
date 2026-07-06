@@ -1,68 +1,77 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { 
-  BsRobot, 
-  BsSend, 
-  BsMagic, 
-  BsCpu, 
-  BsLightbulb, 
+import {
+  BsRobot,
+  BsSend,
+  BsMagic,
+  BsCpu,
+  BsLightbulb,
   BsLightningCharge,
   BsTerminal
 } from 'react-icons/bs';
+import { askAI, type ChatMessage } from '@/services/aiService';
+
+interface UIMessage extends ChatMessage {
+  timestamp: string;
+}
 
 export default function AIQueryContent() {
   const [query, setQuery] = useState('');
   const [isTyping, setIsTyping] = useState(false);
-  const [messages, setMessages] = useState([
-    { 
-      role: 'ai', 
+  const [messages, setMessages] = useState<UIMessage[]>([
+    {
+      role: 'ai',
       content: 'Olá! Sou o assistente BiT Core. Como posso ajudar na análise de dados hoje?',
-      timestamp: 'Sistema Ativo' 
+      timestamp: 'Sistema Ativo'
     }
   ]);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
-  // Simula o efeito de "streaming" da resposta da IA
-  const simulateAIResponse = (userText: string) => {
+  // Consulta o Agente de AI no backend, com streaming incremental token-a-token.
+  const runAIQuery = async (userText: string, history: ChatMessage[]) => {
     setIsTyping(true);
-    
-    // Respostas pré-definidas para simulação
-    const mockResponse = `Com base na análise dos dados de ${userText}, identifiquei uma tendência de crescimento de 14% na inclusão digital na região sul. Recomendo focar a infraestrutura nos pontos de maior densidade populacional detectados via CDRView.`;
-    
     let currentText = '';
-    const tokens = mockResponse.split(' ');
-    let i = 0;
 
-    const interval = setInterval(() => {
-      if (i < tokens.length) {
-        currentText += (i === 0 ? '' : ' ') + tokens[i];
-        setMessages(prev => [
-          ...prev.slice(0, -1),
-          { role: 'ai', content: currentText + ' ▌', timestamp: 'Processando...' }
-        ]);
-        i++;
-      } else {
-        clearInterval(interval);
-        setMessages(prev => [
-          ...prev.slice(0, -1),
-          { role: 'ai', content: mockResponse, timestamp: 'Gerado agora' }
-        ]);
-        setIsTyping(false);
-      }
-    }, 80);
+    const applyChunk = (chunk: string) => {
+      currentText += chunk;
+      setMessages(prev => [
+        ...prev.slice(0, -1),
+        { role: 'ai', content: currentText + ' ▌', timestamp: 'Processando...' },
+      ]);
+    };
+
+    try {
+      const full = await askAI(userText, { history, onToken: applyChunk });
+      setMessages(prev => [
+        ...prev.slice(0, -1),
+        { role: 'ai', content: full || currentText, timestamp: 'Gerado agora' },
+      ]);
+    } catch {
+      setMessages(prev => [
+        ...prev.slice(0, -1),
+        {
+          role: 'ai',
+          content: 'Não foi possível obter resposta do Agente de AI. Tenta novamente.',
+          timestamp: 'Erro',
+        },
+      ]);
+    } finally {
+      setIsTyping(false);
+    }
   };
 
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault();
     if (!query.trim() || isTyping) return;
 
-    const userMessage = { role: 'user', content: query, timestamp: 'Enviado' };
-    setMessages(prev => [...prev, userMessage, { role: 'ai', content: '', timestamp: 'Pensando...' }]);
-    
     const currentQuery = query;
+    const history: ChatMessage[] = messages.map(({ role, content }) => ({ role, content }));
+    const userMessage: UIMessage = { role: 'user', content: currentQuery, timestamp: 'Enviado' };
+
+    setMessages(prev => [...prev, userMessage, { role: 'ai', content: '', timestamp: 'Pensando...' }]);
     setQuery('');
-    simulateAIResponse(currentQuery);
+    void runAIQuery(currentQuery, history);
   };
 
   useEffect(() => {
@@ -98,7 +107,7 @@ export default function AIQueryContent() {
           </div>
           <div className="text-right border-l border-white/10 pl-4">
             <p className="text-[10px] text-slate-500 uppercase font-bold">Modelo</p>
-            <p className="text-xs text-blue-400 font-mono">GPT-4-BIT</p>
+            <p className="text-xs text-blue-400 font-mono">command-r-plus-08-2024</p>
           </div>
         </div>
       </div>

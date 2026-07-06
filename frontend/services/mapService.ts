@@ -33,13 +33,25 @@ export async function getMapLocations(): Promise<MapLocation[]> {
   try {
     const res = await fetch(`${API_BASE}/mapa`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
-    if (Array.isArray(data) && data.length > 0) {
-      return data as MapLocation[];
-    }
-    return SEED_LOCATIONS;
+    const body = await res.json();
+    const list: any[] = body.regioes;
+    if (!Array.isArray(list) || list.length === 0) return SEED_LOCATIONS;
+    return list.map((r, i) => ({
+      id: i + 1,
+      name: r.regiao,
+      lat: r.lat,
+      lng: r.lng,
+      status:
+        r.cobertura_rede === 'Excelente' || r.cobertura_rede === 'Boa'
+          ? 'Online'
+          : r.cobertura_rede === 'Regular'
+            ? 'Manutenção'
+            : 'Offline',
+      detail: r.indicadores ? JSON.stringify(r.indicadores) : undefined,
+    })) as MapLocation[];
   } catch {
     // Endpoint ainda não implementado ou indisponível → usa dados locais.
+    console.error('getMapLocations — erro ao buscar API /mapa, usando fallback');
     return SEED_LOCATIONS;
   }
 }

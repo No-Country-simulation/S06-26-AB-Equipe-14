@@ -85,12 +85,12 @@ export default function DashboardContent() {
       .catch(() => alive && setError('Não foi possível carregar os dados de utilizadores.'))
       .finally(() => alive && setLoading(false));
 
-    // Dados de domínio (mobilidade/telecom + assinantes) — falham em silêncio.
+    // Dados de domínio (mobilidade/telecom + assinantes) — stats agregados via SQL.
     Promise.all([
-      dadosApi.antenas(),
-      dadosApi.concentracao(),
-      dadosApi.fluxoVias(),
-      dadosApi.assinantes(),
+      dadosApi.antenasStats(),
+      dadosApi.concStats(),
+      dadosApi.fluxoViasStats(),
+      dadosApi.assinantesStats(),
     ])
       .then(([antenas, conc, fluxos, assinantes]) => {
         if (!alive) return;

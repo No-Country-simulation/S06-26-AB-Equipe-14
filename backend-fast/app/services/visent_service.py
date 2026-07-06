@@ -447,6 +447,30 @@ class VisentService:
                 )
             return {r[0]: int(r[1]) for r in qry.group_by(col).all() if r[0] is not None}
 
+        top_fluxos_q = (
+            self.db.query(
+                TensorFluxoVias.municipio_origem,
+                TensorFluxoVias.municipio_destino,
+                TensorFluxoVias.cluster_origem,
+                TensorFluxoVias.cluster_destino,
+                TensorFluxoVias.n_transicoes,
+            )
+            .order_by(desc(TensorFluxoVias.n_transicoes))
+            .limit(7)
+        )
+        if regiao:
+            top_fluxos_q = top_fluxos_q.filter(
+                (TensorFluxoVias.cluster_origem == regiao)
+                | (TensorFluxoVias.cluster_destino == regiao)
+            )
+        top_fluxos = [
+            {
+                "label": f"{r.municipio_origem or r.cluster_origem} → {r.municipio_destino or r.cluster_destino}",
+                "value": r.n_transicoes,
+            }
+            for r in top_fluxos_q.all()
+        ]
+
         return {
             "total_usuarios": int(totals.total_usuarios or 0),
             "total_transicoes": int(totals.total_transicoes or 0),
@@ -454,6 +478,7 @@ class VisentService:
             "por_periodo": _group_sum_str(TensorFluxoVias.periodo_predominante),
             "por_cluster_origem": _group_sum_str(TensorFluxoVias.cluster_origem),
             "por_cluster_destino": _group_sum_str(TensorFluxoVias.cluster_destino),
+            "top_fluxos": top_fluxos,
         }
 
     def get_stats_od(self, regiao: Optional[str] = None) -> dict:

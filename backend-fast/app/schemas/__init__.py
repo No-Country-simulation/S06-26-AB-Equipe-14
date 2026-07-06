@@ -3,6 +3,9 @@ from typing import Optional, List, Any
 from datetime import date
 
 
+class CategoryDatum(BaseModel):
+    label: str
+    value: int
 
 
 class FiltrosRequest(BaseModel):
@@ -108,6 +111,7 @@ class FluxoViasStats(BaseModel):
     por_periodo: dict[str, int]
     por_cluster_origem: dict[str, int]
     por_cluster_destino: dict[str, int]
+    top_fluxos: list[CategoryDatum] = []
 
 
 class ODStats(BaseModel):

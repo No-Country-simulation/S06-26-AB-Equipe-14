@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   BsFileEarmarkBarGraph,
   BsDownload,
@@ -14,7 +14,7 @@ import {
   BsPeople,
   BsGraphUp,
 } from 'react-icons/bs';
-import { getReportsOverview, type ReportsOverview, type AnalyticalReport } from '@/services/reportsService';
+import { loadReports, REPORT_ORDER, type AnalyticalReport } from '@/services/reportsService';
 import { askAI } from '@/services/aiService';
 import { generateReportPdf } from '@/lib/pdf';
 
@@ -36,22 +36,36 @@ function formatDate(iso: string): string {
   }
 }
 
+interface Kpis {
+  totalAntenas?: number;
+  totalAssinantes?: number;
+  totalMobilidade?: number;
+}
+
 export default function ReportsContent() {
-  const [overview, setOverview] = useState<ReportsOverview | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [reportsMap, setReportsMap] = useState<Record<string, AnalyticalReport>>({});
+  const [kpis, setKpis] = useState<Kpis>({});
   const [syncing, setSyncing] = useState(false);
   const [insight, setInsight] = useState('');
   const [insightLoading, setInsightLoading] = useState(true);
+  const aliveRef = useRef(true);
 
-  const loadData = useCallback(async () => {
+  useEffect(() => {
+    aliveRef.current = true;
+    return () => {
+      aliveRef.current = false;
+    };
+  }, []);
+
+  const loadData = useCallback(() => {
     setSyncing(true);
-    try {
-      const data = await getReportsOverview();
-      setOverview(data);
-    } finally {
-      setSyncing(false);
-      setLoading(false);
-    }
+    setReportsMap({});
+    setKpis({});
+    loadReports({
+      onKpis: (partial) => aliveRef.current && setKpis((k) => ({ ...k, ...partial })),
+      onReport: (r) => aliveRef.current && setReportsMap((m) => ({ ...m, [r.id]: r })),
+      onSettled: () => aliveRef.current && setSyncing(false),
+    });
   }, []);
 
   const generateInsight = useCallback(async () => {
@@ -62,27 +76,27 @@ export default function ReportsContent() {
       await askAI(INSIGHT_PROMPT, {
         onToken: (chunk) => {
           acc += chunk;
-          setInsight(acc.replace(/▌/g, '').trim());
+          if (aliveRef.current) setInsight(acc.replace(/▌/g, '').trim());
         },
       });
-      if (!acc.trim()) setInsight('Sem resumo disponível de momento.');
+      if (!acc.trim() && aliveRef.current) setInsight('Sem resumo disponível de momento.');
     } catch {
-      setInsight('Não foi possível gerar o resumo executivo agora.');
+      if (aliveRef.current) setInsight('Não foi possível gerar o resumo executivo agora.');
     } finally {
-      setInsightLoading(false);
+      if (aliveRef.current) setInsightLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    void loadData();
+    loadData();
     void generateInsight();
   }, [loadData, generateInsight]);
 
-  const kpis = overview?.kpis;
+  const fmtKpi = (n?: number) => (n != null ? n.toLocaleString('pt-PT') : '…');
   const stats = [
     {
       label: 'Antenas / ERBs',
-      value: kpis ? kpis.totalAntenas.toLocaleString('pt-PT') : '—',
+      value: fmtKpi(kpis.totalAntenas),
       icon: <BsBroadcastPin />,
       color: 'text-blue-400',
       barColor: 'bg-blue-500',
@@ -90,7 +104,7 @@ export default function ReportsContent() {
     },
     {
       label: 'Assinantes',
-      value: kpis ? kpis.totalAssinantes.toLocaleString('pt-PT') : '—',
+      value: fmtKpi(kpis.totalAssinantes),
       icon: <BsPeople />,
       color: 'text-cyan-400',
       barColor: 'bg-cyan-500',
@@ -98,15 +112,13 @@ export default function ReportsContent() {
     },
     {
       label: 'Registos de Mobilidade',
-      value: kpis ? kpis.totalMobilidade.toLocaleString('pt-PT') : '—',
+      value: fmtKpi(kpis.totalMobilidade),
       icon: <BsGraphUp />,
       color: 'text-emerald-400',
       barColor: 'bg-emerald-500',
       glow: 'shadow-emerald-500/20',
     },
   ];
-
-  const reports: AnalyticalReport[] = overview?.reports ?? [];
 
   const handleDownload = (report: AnalyticalReport) => {
     generateReportPdf(report, { insight: insight || undefined });
@@ -169,7 +181,7 @@ export default function ReportsContent() {
                 </div>
                 <p className="text-slate-400 text-[0.65rem] font-medium tracking-wide uppercase">{stat.label}</p>
               </div>
-              <h3 className="text-lg sm:text-xl font-bold text-white">{loading ? '…' : stat.value}</h3>
+              <h3 className="text-lg sm:text-xl font-bold text-white">{stat.value}</h3>
               <div className={`absolute bottom-0 left-0 right-0 h-1 ${stat.barColor} opacity-70 group-hover:opacity-100 transition-opacity`} />
             </div>
           ))}
@@ -186,7 +198,7 @@ export default function ReportsContent() {
           <button
             type="button"
             title="Recarregar dados dos relatórios"
-            onClick={() => void loadData()}
+            onClick={() => loadData()}
             disabled={syncing}
             className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:bg-slate-700 disabled:text-slate-400 text-white rounded-xl text-xs font-bold transition-all active:scale-95"
           >
@@ -206,75 +218,82 @@ export default function ReportsContent() {
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
-              {loading ? (
-                <tr>
-                  <td colSpan={5} className="px-6 py-10 text-center text-sm text-slate-500">
-                    A carregar relatórios…
-                  </td>
-                </tr>
-              ) : (
-                reports.map((report) => {
-                  const semDados = report.recordCount === 0;
+              {REPORT_ORDER.map((id) => {
+                const report = reportsMap[id];
+
+                // Ainda a carregar esta fonte → linha placeholder.
+                if (!report) {
                   return (
-                    <tr key={report.id} className="group hover:bg-white/[0.02] transition-colors">
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-3">
-                          <div className="h-10 w-10 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-400 group-hover:bg-blue-500 group-hover:text-white transition-all">
-                            <BsFileEarmarkBarGraph size={18} />
-                          </div>
-                          <div>
-                            <span className="block text-sm font-medium text-slate-200 group-hover:text-white transition-colors">
-                              {report.name}
-                            </span>
-                            <span className="block text-[11px] text-slate-500">{report.description}</span>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-xs text-slate-400 font-mono">
-                        {formatDate(report.generatedAt)}
-                      </td>
-                      <td className="px-6 py-4 text-xs text-slate-400 font-mono">
-                        {report.recordCount.toLocaleString('pt-PT')}
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex justify-center">
-                          {semDados ? (
-                            <span className="flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-bold bg-amber-500/10 border border-amber-500/20 text-amber-400">
-                              <BsClockHistory /> Sem dados
-                            </span>
-                          ) : (
-                            <span className="flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-bold bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 uppercase">
-                              <BsCheck2Circle /> {report.status}
-                            </span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <div className="flex justify-end gap-2">
-                          <button
-                            type="button"
-                            title="Regenerar resumo com IA"
-                            onClick={() => void generateInsight()}
-                            disabled={insightLoading}
-                            className="p-2 text-slate-400 hover:text-cyan-400 hover:bg-cyan-400/10 rounded-lg transition-all disabled:opacity-40"
-                          >
-                            <BsMagic size={16} />
-                          </button>
-                          <button
-                            type="button"
-                            title={semDados ? 'Sem dados para exportar' : 'Download PDF'}
-                            onClick={() => handleDownload(report)}
-                            disabled={semDados}
-                            className="p-2 text-slate-400 hover:text-blue-400 hover:bg-blue-400/10 rounded-lg transition-all disabled:opacity-30 disabled:hover:bg-transparent"
-                          >
-                            <BsDownload size={16} />
-                          </button>
+                    <tr key={id} className="animate-pulse">
+                      <td className="px-6 py-4" colSpan={5}>
+                        <div className="flex items-center gap-3 text-slate-500 text-sm">
+                          <BsClockHistory className="animate-spin" /> A carregar dados…
                         </div>
                       </td>
                     </tr>
                   );
-                })
-              )}
+                }
+
+                const semDados = report.recordCount === 0;
+                return (
+                  <tr key={id} className="group hover:bg-white/[0.02] transition-colors">
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-400 group-hover:bg-blue-500 group-hover:text-white transition-all">
+                          <BsFileEarmarkBarGraph size={18} />
+                        </div>
+                        <div>
+                          <span className="block text-sm font-medium text-slate-200 group-hover:text-white transition-colors">
+                            {report.name}
+                          </span>
+                          <span className="block text-[11px] text-slate-500">{report.description}</span>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-xs text-slate-400 font-mono">
+                      {formatDate(report.generatedAt)}
+                    </td>
+                    <td className="px-6 py-4 text-xs text-slate-400 font-mono">
+                      {report.recordCount.toLocaleString('pt-PT')}
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex justify-center">
+                        {semDados ? (
+                          <span className="flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-bold bg-amber-500/10 border border-amber-500/20 text-amber-400">
+                            <BsClockHistory /> Sem dados
+                          </span>
+                        ) : (
+                          <span className="flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-bold bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 uppercase">
+                            <BsCheck2Circle /> {report.status}
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <div className="flex justify-end gap-2">
+                        <button
+                          type="button"
+                          title="Regenerar resumo com IA"
+                          onClick={() => void generateInsight()}
+                          disabled={insightLoading}
+                          className="p-2 text-slate-400 hover:text-cyan-400 hover:bg-cyan-400/10 rounded-lg transition-all disabled:opacity-40"
+                        >
+                          <BsMagic size={16} />
+                        </button>
+                        <button
+                          type="button"
+                          title={semDados ? 'Sem dados para exportar' : 'Download PDF'}
+                          onClick={() => handleDownload(report)}
+                          disabled={semDados}
+                          className="p-2 text-slate-400 hover:text-blue-400 hover:bg-blue-400/10 rounded-lg transition-all disabled:opacity-30 disabled:hover:bg-transparent"
+                        >
+                          <BsDownload size={16} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

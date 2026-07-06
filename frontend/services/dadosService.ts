@@ -79,14 +79,22 @@ export interface TensorOD {
 /* Fetch genérico com fallback                                         */
 /* ------------------------------------------------------------------ */
 
+// Timeout generoso: alguns endpoints devolvem a tabela inteira (ex.: assinantes
+// pode chegar a dezenas de MB). Evita que um pedido fique pendurado para sempre,
+// sem cortar os que demoram legitimamente. Ver mensagem ao backend sobre
+// endpoints agregados para eliminar estes payloads gigantes.
+const FETCH_TIMEOUT_MS = 120_000;
+
 async function fetchList<T>(path: string): Promise<T[]> {
   try {
-    const res = await fetch(`${API_BASE}/dados/${path}`);
+    const res = await fetch(`${API_BASE}/dados/${path}`, {
+      signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+    });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     return Array.isArray(data) ? (data as T[]) : [];
   } catch {
-    // Endpoint indisponível ou base vazia → não quebra a UI.
+    // Endpoint indisponível, base vazia ou timeout → não quebra a UI.
     return [];
   }
 }

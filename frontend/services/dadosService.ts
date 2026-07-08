@@ -85,27 +85,41 @@ export interface TensorOD {
 // endpoints agregados para eliminar estes payloads gigantes.
 const FETCH_TIMEOUT_MS = 120_000;
 
-async function fetchList<T>(path: string): Promise<T[]> {
+async function fetchStats(path: string): Promise<any> {
   try {
+    const token = typeof window !== 'undefined' ? localStorage.getItem("token") : null;
+    const headers: Record<string, string> = {};
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
     const res = await fetch(`${API_BASE}/dados/${path}`, {
+      headers,
       signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
     });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
-    return Array.isArray(data) ? (data as T[]) : [];
-  } catch {
-    // Endpoint indisponível, base vazia ou timeout → não quebra a UI.
-    return [];
+    if (!res.ok) {
+      if (res.status === 401) {
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem("token");
+          localStorage.removeItem("user");
+          window.location.href = "/";
+        }
+      }
+      throw new Error(`HTTP ${res.status}`);
+    }
+    return await res.json();
+  } catch (err) {
+    return null;
   }
 }
 
 export const dadosApi = {
-  antenas: () => fetchList<Antena>("antenas"),
-  assinantes: () => fetchList<Assinante>("assinantes"),
-  concentracao: () => fetchList<TensorConcentracao>("tensor_concentracao"),
-  fluxoVias: () => fetchList<TensorFluxoVias>("tensor_fluxovias"),
-  od: () => fetchList<TensorOD>("tensorod"),
+  antenas: () => fetchStats("antenas"),
+  assinantes: () => fetchStats("assinantes"),
+  concentracao: () => fetchStats("tensor_concentracao"),
+  fluxoVias: () => fetchStats("tensor_fluxovias"),
+  od: () => fetchStats("tensorod"),
 };
+
 
 /* ------------------------------------------------------------------ */
 /* Agregações para os gráficos                                         */
@@ -162,48 +176,69 @@ function orderPeriodo(data: CategoryDatum[]): CategoryDatum[] {
 /* --------- Mobilidade / Telecom --------- */
 
 /** Nº de antenas por tecnologia (2G/3G/4G/5G…). */
-export function antenasPorTecnologia(antenas: Antena[]): CategoryDatum[] {
-  return countBy(antenas, (a) => a.tecnologia);
+export function antenasPorTecnologia(antenas: any): CategoryDatum[] {
+  if (!antenas || !antenas.por_tecnologia) return [];
+  return Object.entries(antenas.por_tecnologia).map(([label, value]) => ({
+    label,
+    value: Number(value),
+  })).sort((a, b) => b.value - a.value);
 }
 
 /** Utilizadores únicos somados por município (top N). */
 export function concentracaoPorMunicipio(
-  conc: TensorConcentracao[],
+  conc: any,
   topN = 8
 ): CategoryDatum[] {
-  return sumBy(conc, (c) => c.municipio, (c) => c.n_usuarios).slice(0, topN);
+  if (!conc || !conc.por_municipio) return [];
+  return Object.entries(conc.por_municipio).map(([label, value]) => ({
+    label,
+    value: Number(value),
+  })).sort((a, b) => b.value - a.value).slice(0, topN);
 }
 
 /** Distribuição de utilizadores por período do dia. */
-export function concentracaoPorPeriodo(conc: TensorConcentracao[]): CategoryDatum[] {
-  return orderPeriodo(sumBy(conc, (c) => c.periodo, (c) => c.n_usuarios));
+export function concentracaoPorPeriodo(conc: any): CategoryDatum[] {
+  if (!conc || !conc.por_periodo) return [];
+  const mapped = Object.entries(conc.por_periodo).map(([label, value]) => ({
+    label,
+    value: Number(value),
+  }));
+  return orderPeriodo(mapped);
 }
 
 /** Top fluxos origem→destino por nº de transições. */
-export function topFluxos(fluxos: TensorFluxoVias[], topN = 7): CategoryDatum[] {
-  return [...fluxos]
-    .sort((a, b) => b.n_transicoes - a.n_transicoes)
-    .slice(0, topN)
-    .map((f) => ({
-      label: `${f.municipio_origem ?? f.cluster_origem} → ${
-        f.municipio_destino ?? f.cluster_destino
-      }`,
-      value: f.n_transicoes,
-    }));
+export function topFluxos(fluxos: any, topN = 7): CategoryDatum[] {
+  if (!fluxos || !fluxos.por_cluster_origem) return [];
+  return Object.entries(fluxos.por_cluster_origem).map(([label, value]) => ({
+    label: `Origem: ${label}`,
+    value: Number(value),
+  })).sort((a, b) => b.value - a.value).slice(0, topN);
 }
 
 /* --------- Assinantes (demografia) --------- */
 
-export function assinantesPorAgeGroup(assinantes: Assinante[]): CategoryDatum[] {
-  return countBy(assinantes, (a) => a.age_group);
+export function assinantesPorAgeGroup(assinantes: any): CategoryDatum[] {
+  if (!assinantes || !assinantes.por_idade) return [];
+  return Object.entries(assinantes.por_idade).map(([label, value]) => ({
+    label,
+    value: Number(value),
+  })).sort((a, b) => b.value - a.value);
 }
 
-export function assinantesPorIncome(assinantes: Assinante[]): CategoryDatum[] {
-  return countBy(assinantes, (a) => a.income_cluster);
+export function assinantesPorIncome(assinantes: any): CategoryDatum[] {
+  if (!assinantes || !assinantes.por_renda) return [];
+  return Object.entries(assinantes.por_renda).map(([label, value]) => ({
+    label,
+    value: Number(value),
+  })).sort((a, b) => b.value - a.value);
 }
 
-export function assinantesPorMobilidade(assinantes: Assinante[]): CategoryDatum[] {
-  return countBy(assinantes, (a) => a.mobility_pattern);
+export function assinantesPorMobilidade(assinantes: any): CategoryDatum[] {
+  if (!assinantes || !assinantes.por_mobilidade) return [];
+  return Object.entries(assinantes.por_mobilidade).map(([label, value]) => ({
+    label,
+    value: Number(value),
+  })).sort((a, b) => b.value - a.value);
 }
 
 export default dadosApi;

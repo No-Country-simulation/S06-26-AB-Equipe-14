@@ -35,14 +35,28 @@ export interface AskOptions {
  */
 export async function askAI(query: string, opts: AskOptions = {}): Promise<string> {
   try {
+    const token = typeof window !== 'undefined' ? localStorage.getItem("token") : null;
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
     const res = await fetch(AI_ENDPOINT, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify({ consulta: query, idioma: 'pt' }),
       signal: opts.signal,
     });
 
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    if (!res.ok) {
+      if (res.status === 401) {
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem("token");
+          localStorage.removeItem("user");
+          window.location.href = "/";
+        }
+      }
+      throw new Error(`HTTP ${res.status}`);
+    }
 
     const data = await res.json();
     const answer: string =

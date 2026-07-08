@@ -95,7 +95,7 @@ export default function DashboardContent() {
     // Dados de domínio — carregados de forma independente (progressiva) para
     // que os gráficos rápidos apareçam já e os pesados não bloqueiem a página.
     const pAntenas = dadosApi
-      .antenas()
+      .antenasStats()
       .then((antenas) => {
         if (!alive) return;
         setDomain((d) => ({ ...d, antenasTecnologia: antenasPorTecnologia(antenas) }));
@@ -103,7 +103,7 @@ export default function DashboardContent() {
       .finally(() => alive && setSrcLoading((s) => ({ ...s, antenas: false })));
 
     const pConc = dadosApi
-      .concentracao()
+      .concStats()
       .then((conc) => {
         if (!alive) return;
         setDomain((d) => ({
@@ -115,19 +115,18 @@ export default function DashboardContent() {
       .finally(() => alive && setSrcLoading((s) => ({ ...s, conc: false })));
 
     const pFluxos = dadosApi
-      .fluxoVias()
+      .fluxoViasStats()
       .then((fluxos) => {
         if (!alive) return;
         setDomain((d) => ({ ...d, fluxos: topFluxos(fluxos) }));
       })
       .finally(() => alive && setSrcLoading((s) => ({ ...s, fluxos: false })));
 
-    // Assinantes é o payload mais pesado (~33 MB) — só arranca depois dos leves,
-    // para não competir por largura de banda e atrasar os gráficos rápidos.
+    // Assinantes — só arranca depois dos leves, para não competir por largura de banda.
     Promise.allSettled([pAntenas, pConc, pFluxos]).then(() => {
       if (!alive) return;
       dadosApi
-        .assinantes()
+        .assinantesStats()
         .then((assinantes) => {
           if (!alive) return;
           setDomain((d) => ({

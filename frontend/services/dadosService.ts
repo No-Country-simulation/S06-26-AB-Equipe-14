@@ -1,82 +1,67 @@
-// services/dadosService.ts
-// Consome os endpoints de domínio (/api/dados/*) do backend (dataset Visent Coreview)
-// e deriva as agregações usadas pelos gráficos estatísticos da Dashboard.
-// Cada fetch tem fallback gracioso: se o endpoint ainda não existir / a base estiver
-// vazia, devolve [] em vez de rebentar a UI.
-
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "/api";
 
 /* ------------------------------------------------------------------ */
-/* Tipos espelhando os _to_dict do backend (app/routers/dados.py)      */
+/* Tipos espelhando os schemas do backend                              */
 /* ------------------------------------------------------------------ */
 
-export interface Antena {
-  ecgi: string;
-  municipio: string;
-  cluster: string;
-  lat: number;
-  lon: number;
-  tecnologia: string;
-  nome: string;
+export interface AntenasStats {
+  total: number;
+  por_tecnologia: Record<string, number>;
+  por_municipio: Record<string, number>;
+  por_cluster: Record<string, number>;
 }
 
-export interface Assinante {
-  assinante_hash: string;
-  home_cluster: string;
-  home_municipio: string;
-  income_cluster: string;
-  age_group: string;
-  mobility_pattern: string;
-  flag_flagship: boolean;
+export interface AssinantesStats {
+  total: number;
+  por_idade: Record<string, number>;
+  por_renda: Record<string, number>;
+  por_mobilidade: Record<string, number>;
+  por_cluster: Record<string, number>;
+  por_municipio: Record<string, number>;
 }
 
-export interface TensorConcentracao {
-  ecgi: string;
-  cluster: string;
-  municipio: string;
-  dia: string | null;
-  periodo: string;
-  n_usuarios: number;
-  n_sessoes: number;
-  download_bytes: number;
-  upload_bytes: number;
-  dur_media_s: number;
-  drop_pct_medio: number;
-  congestionamento_medio: number;
-  chamadas_total: number;
-  mensagens_total: number;
-  lat: number;
-  lon: number;
+export interface ConcentracaoStats {
+  total_usuarios: number;
+  total_sessoes: number;
+  total_download_gb: number;
+  total_upload_gb: number;
+  total_chamadas: number;
+  total_mensagens: number;
+  congestionamento_medio: number | null;
+  drop_medio: number | null;
+  por_cluster: Record<string, number>;
+  por_municipio: Record<string, number>;
+  por_periodo: Record<string, number>;
 }
 
-export interface TensorFluxoVias {
-  ecgi_origem: string;
-  municipio_origem: string;
-  cluster_origem: string;
-  ecgi_destino: string;
-  municipio_destino: string;
-  cluster_destino: string;
-  n_usuarios: number;
-  n_transicoes: number;
-  dist_km: number;
-  periodo_predominante: string;
-  pct_do_cluster_origem: number;
+export interface CategoryDatum {
+  label: string;
+  value: number;
 }
 
-export interface TensorOD {
-  cluster_origem: string;
-  municipio_origem: string;
-  cluster_destino: string;
-  municipio_destino: string;
-  mesmo_cluster: boolean;
-  n_usuarios: number;
-  n_viagens: number;
-  dist_media_km: number;
-  periodo_predominante: string;
+export interface FluxoViasStats {
+  total_usuarios: number;
+  total_transicoes: number;
+  dist_media_km: number | null;
+  por_periodo: Record<string, number>;
+  por_cluster_origem: Record<string, number>;
+  por_cluster_destino: Record<string, number>;
+  top_fluxos: CategoryDatum[];
+}
+
+export interface ODStats {
+  total_usuarios: number;
+  total_viagens: number;
+  dist_media_km: number | null;
+  total_mesmo_cluster: number;
+  total_diferente_cluster: number;
+  por_periodo: Record<string, number>;
+  por_cluster_origem: Record<string, number>;
+  por_cluster_destino: Record<string, number>;
 }
 
 /* ------------------------------------------------------------------ */
-/* Fetch genérico com fallback                                         */
+/* Fetch com fallback para stats objects                               */
 /* ------------------------------------------------------------------ */
 
 // Timeout generoso: alguns endpoints devolvem a tabela inteira (ex.: assinantes
@@ -85,7 +70,7 @@ export interface TensorOD {
 // endpoints agregados para eliminar estes payloads gigantes.
 const FETCH_TIMEOUT_MS = 120_000;
 
-async function fetchStats(path: string): Promise<any> {
+async function fetchStats<T>(path: string): Promise<T | null> {
   try {
     const token = typeof window !== 'undefined' ? localStorage.getItem("token") : null;
     const headers: Record<string, string> = {};
@@ -96,74 +81,33 @@ async function fetchStats(path: string): Promise<any> {
       headers,
       signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
     });
-    if (!res.ok) {
-      if (res.status === 401) {
-        if (typeof window !== 'undefined') {
-          localStorage.removeItem("token");
-          localStorage.removeItem("user");
-          window.location.href = "/";
-        }
-      }
-      throw new Error(`HTTP ${res.status}`);
-    }
-    return await res.json();
-  } catch (err) {
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return (await res.json()) as T;
+  } catch {
     return null;
   }
 }
 
 export const dadosApi = {
-  antenas: () => fetchStats("antenas"),
-  assinantes: () => fetchStats("assinantes"),
-  concentracao: () => fetchStats("tensor_concentracao"),
-  fluxoVias: () => fetchStats("tensor_fluxovias"),
-  od: () => fetchStats("tensorod"),
+  antenasStats: () => fetchStats<AntenasStats>("antenas"),
+  assinantesStats: () => fetchStats<AssinantesStats>("assinantes"),
+  concStats: () => fetchStats<ConcentracaoStats>("tensor_concentracao"),
+  fluxoViasStats: () => fetchStats<FluxoViasStats>("tensor_fluxovias"),
+  odStats: () => fetchStats<ODStats>("tensorod"),
 };
 
 
 /* ------------------------------------------------------------------ */
-/* Agregações para os gráficos                                         */
+/* Helper: dict → CategoryDatum[]                                      */
 /* ------------------------------------------------------------------ */
 
-export interface CategoryDatum {
-  label: string;
-  value: number;
-}
-
-export interface SeriesDatum {
-  label: string;
-  [serie: string]: string | number;
+function dictToCategory(dict: Record<string, number>): CategoryDatum[] {
+  return Object.entries(dict)
+    .map(([label, value]) => ({ label, value }))
+    .sort((a, b) => b.value - a.value);
 }
 
 const PERIODO_ORDER = ["madrugada", "manha", "manhã", "tarde", "noite"];
-
-function countBy<T>(items: T[], key: (item: T) => string | null | undefined): CategoryDatum[] {
-  const map = new Map<string, number>();
-  for (const it of items) {
-    const k = key(it);
-    if (!k) continue;
-    map.set(k, (map.get(k) ?? 0) + 1);
-  }
-  return Array.from(map, ([label, value]) => ({ label, value })).sort(
-    (a, b) => b.value - a.value
-  );
-}
-
-function sumBy<T>(
-  items: T[],
-  key: (item: T) => string | null | undefined,
-  value: (item: T) => number
-): CategoryDatum[] {
-  const map = new Map<string, number>();
-  for (const it of items) {
-    const k = key(it);
-    if (!k) continue;
-    map.set(k, (map.get(k) ?? 0) + (value(it) ?? 0));
-  }
-  return Array.from(map, ([label, value]) => ({ label, value })).sort(
-    (a, b) => b.value - a.value
-  );
-}
 
 function orderPeriodo(data: CategoryDatum[]): CategoryDatum[] {
   return [...data].sort((a, b) => {
@@ -173,72 +117,46 @@ function orderPeriodo(data: CategoryDatum[]): CategoryDatum[] {
   });
 }
 
-/* --------- Mobilidade / Telecom --------- */
+/* ------------------------------------------------------------------ */
+/* Agregações — agora a partir de stats objects do backend            */
+/* ------------------------------------------------------------------ */
 
-/** Nº de antenas por tecnologia (2G/3G/4G/5G…). */
-export function antenasPorTecnologia(antenas: any): CategoryDatum[] {
-  if (!antenas || !antenas.por_tecnologia) return [];
-  return Object.entries(antenas.por_tecnologia).map(([label, value]) => ({
-    label,
-    value: Number(value),
-  })).sort((a, b) => b.value - a.value);
+export function antenasPorTecnologia(stats: AntenasStats | null): CategoryDatum[] {
+  if (!stats) return [];
+  return dictToCategory(stats.por_tecnologia);
 }
 
-/** Utilizadores únicos somados por município (top N). */
 export function concentracaoPorMunicipio(
-  conc: any,
+  stats: ConcentracaoStats | null,
   topN = 8
 ): CategoryDatum[] {
-  if (!conc || !conc.por_municipio) return [];
-  return Object.entries(conc.por_municipio).map(([label, value]) => ({
-    label,
-    value: Number(value),
-  })).sort((a, b) => b.value - a.value).slice(0, topN);
+  if (!stats) return [];
+  return dictToCategory(stats.por_municipio).slice(0, topN);
 }
 
-/** Distribuição de utilizadores por período do dia. */
-export function concentracaoPorPeriodo(conc: any): CategoryDatum[] {
-  if (!conc || !conc.por_periodo) return [];
-  const mapped = Object.entries(conc.por_periodo).map(([label, value]) => ({
-    label,
-    value: Number(value),
-  }));
-  return orderPeriodo(mapped);
+export function concentracaoPorPeriodo(stats: ConcentracaoStats | null): CategoryDatum[] {
+  if (!stats) return [];
+  return orderPeriodo(dictToCategory(stats.por_periodo));
 }
 
-/** Top fluxos origem→destino por nº de transições. */
-export function topFluxos(fluxos: any, topN = 7): CategoryDatum[] {
-  if (!fluxos || !fluxos.por_cluster_origem) return [];
-  return Object.entries(fluxos.por_cluster_origem).map(([label, value]) => ({
-    label: `Origem: ${label}`,
-    value: Number(value),
-  })).sort((a, b) => b.value - a.value).slice(0, topN);
+export function topFluxos(stats: FluxoViasStats | null): CategoryDatum[] {
+  if (!stats) return [];
+  return stats.top_fluxos;
 }
 
-/* --------- Assinantes (demografia) --------- */
-
-export function assinantesPorAgeGroup(assinantes: any): CategoryDatum[] {
-  if (!assinantes || !assinantes.por_idade) return [];
-  return Object.entries(assinantes.por_idade).map(([label, value]) => ({
-    label,
-    value: Number(value),
-  })).sort((a, b) => b.value - a.value);
+export function assinantesPorAgeGroup(stats: AssinantesStats | null): CategoryDatum[] {
+  if (!stats) return [];
+  return Object.entries(stats.por_idade).map(([label, value]) => ({ label, value }));
 }
 
-export function assinantesPorIncome(assinantes: any): CategoryDatum[] {
-  if (!assinantes || !assinantes.por_renda) return [];
-  return Object.entries(assinantes.por_renda).map(([label, value]) => ({
-    label,
-    value: Number(value),
-  })).sort((a, b) => b.value - a.value);
+export function assinantesPorIncome(stats: AssinantesStats | null): CategoryDatum[] {
+  if (!stats) return [];
+  return dictToCategory(stats.por_renda);
 }
 
-export function assinantesPorMobilidade(assinantes: any): CategoryDatum[] {
-  if (!assinantes || !assinantes.por_mobilidade) return [];
-  return Object.entries(assinantes.por_mobilidade).map(([label, value]) => ({
-    label,
-    value: Number(value),
-  })).sort((a, b) => b.value - a.value);
+export function assinantesPorMobilidade(stats: AssinantesStats | null): CategoryDatum[] {
+  if (!stats) return [];
+  return dictToCategory(stats.por_mobilidade);
 }
 
 export default dadosApi;

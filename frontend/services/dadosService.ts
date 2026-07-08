@@ -72,7 +72,13 @@ const FETCH_TIMEOUT_MS = 120_000;
 
 async function fetchStats<T>(path: string): Promise<T | null> {
   try {
+    const token = typeof window !== 'undefined' ? localStorage.getItem("token") : null;
+    const headers: Record<string, string> = {};
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
     const res = await fetch(`${API_BASE}/dados/${path}`, {
+      headers,
       signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -89,6 +95,7 @@ export const dadosApi = {
   fluxoViasStats: () => fetchStats<FluxoViasStats>("tensor_fluxovias"),
   odStats: () => fetchStats<ODStats>("tensorod"),
 };
+
 
 /* ------------------------------------------------------------------ */
 /* Helper: dict → CategoryDatum[]                                      */

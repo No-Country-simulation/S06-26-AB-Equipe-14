@@ -12,7 +12,9 @@ from app.schemas import (
 from app.services.visent_service import VisentService
 from app.services.cohere_service import CohereService
 
-router = APIRouter(prefix="/api/dados")
+from app.services.auth_service import obter_utilizador_atual
+
+router = APIRouter(prefix="/api/dados", dependencies=[Depends(obter_utilizador_atual)])
 
 cohere_service = CohereService()
 

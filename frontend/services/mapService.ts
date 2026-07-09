@@ -31,7 +31,12 @@ export const DEFAULT_CENTER: [number, number] = [-11.2027, 17.8739];
 /** Busca os pontos do mapa, com fallback para os dados-semente. */
 export async function getMapLocations(): Promise<MapLocation[]> {
   try {
-    const res = await fetch(`${API_BASE}/mapa`);
+    const token = typeof window !== 'undefined' ? localStorage.getItem("token") : null;
+    const headers: Record<string, string> = {};
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+    const res = await fetch(`${API_BASE}/mapa`, { headers });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const body = await res.json();
     const list: any[] = body.regioes;

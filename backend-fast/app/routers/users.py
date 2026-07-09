@@ -3,7 +3,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.services.auth_service import encriptar_password, registar_utilizador
+from app.services.auth_service import encriptar_password, registar_utilizador, obter_utilizador_atual
 from app.repositories.user_repository import (
     get_all_users,
     get_user_by_id,
@@ -50,13 +50,13 @@ def criar_utilizador(dados: UserRequest, db: Session = Depends(get_db)):
 
 
 @router.get("")
-def listar_utilizadores(db: Session = Depends(get_db)):
+def listar_utilizadores(db: Session = Depends(get_db), current_user=Depends(obter_utilizador_atual)):
     users = get_all_users(db)
     return [_user_to_dict(u) for u in users]
 
 
 @router.get("/{id}")
-def ver_utilizador(id: int, db: Session = Depends(get_db)):
+def ver_utilizador(id: int, db: Session = Depends(get_db), current_user=Depends(obter_utilizador_atual)):
     user = get_user_by_id(db, id)
     if not user:
         raise HTTPException(status_code=404, detail="Utilizador não encontrado")
@@ -64,7 +64,7 @@ def ver_utilizador(id: int, db: Session = Depends(get_db)):
 
 
 @router.put("/{id}")
-def actualizar_utilizador(id: int, dados: UserRequest, db: Session = Depends(get_db)):
+def actualizar_utilizador(id: int, dados: UserRequest, db: Session = Depends(get_db), current_user=Depends(obter_utilizador_atual)):
     user = get_user_by_id(db, id)
     if not user:
         raise HTTPException(status_code=404, detail="Utilizador não encontrado")
@@ -83,7 +83,7 @@ def actualizar_utilizador(id: int, dados: UserRequest, db: Session = Depends(get
 
 
 @router.patch("/{id}/deactivate")
-def desactivar_utilizador(id: int, db: Session = Depends(get_db)):
+def desactivar_utilizador(id: int, db: Session = Depends(get_db), current_user=Depends(obter_utilizador_atual)):
     user = get_user_by_id(db, id)
     if not user:
         raise HTTPException(status_code=404, detail="Utilizador não encontrado")
@@ -92,7 +92,7 @@ def desactivar_utilizador(id: int, db: Session = Depends(get_db)):
 
 
 @router.delete("/{id}")
-def apagar_utilizador(id: int, db: Session = Depends(get_db)):
+def apagar_utilizador(id: int, db: Session = Depends(get_db), current_user=Depends(obter_utilizador_atual)):
     user = get_user_by_id(db, id)
     if not user:
         raise HTTPException(status_code=404, detail="Utilizador não encontrado")

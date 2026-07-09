@@ -35,10 +35,26 @@ export interface LoginResponse {
 
 async function handleResponse<T>(res: Response): Promise<T> {
   if (!res.ok) {
+    if (res.status === 401) {
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        window.location.href = "/";
+      }
+    }
     const message = await res.text();
     throw new Error(message || `Erro HTTP ${res.status}`);
   }
   return res.json() as Promise<T>;
+}
+
+function getHeaders(extra: Record<string, string> = {}): Record<string, string> {
+  const token = typeof window !== 'undefined' ? localStorage.getItem("token") : null;
+  const headers: Record<string, string> = { ...extra };
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+  return headers;
 }
 
 export const userService = {
@@ -59,25 +75,31 @@ export const userService = {
     }).then(handleResponse<UserResponse>),
 
   findAll: (): Promise<UserResponse[]> =>
-    fetch(`${API_BASE}/users`).then(handleResponse<UserResponse[]>),
+    fetch(`${API_BASE}/users`, { headers: getHeaders() }).then(handleResponse<UserResponse[]>),
 
   findById: (id: number): Promise<UserResponse> =>
-    fetch(`${API_BASE}/users/${id}`).then(handleResponse<UserResponse>),
+    fetch(`${API_BASE}/users/${id}`, { headers: getHeaders() }).then(handleResponse<UserResponse>),
 
   update: (id: number, data: Partial<UserRequest>): Promise<UserResponse> =>
     fetch(`${API_BASE}/users/${id}`, {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
+      headers: getHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify(data),
     }).then(handleResponse<UserResponse>),
 
   deactivate: (id: number): Promise<void> =>
-    fetch(`${API_BASE}/users/${id}/deactivate`, { method: "PATCH" }).then(
+    fetch(`${API_BASE}/users/${id}/deactivate`, {
+      method: "PATCH",
+      headers: getHeaders(),
+    }).then(
       (res) => { if (!res.ok) throw new Error(`Erro HTTP ${res.status}`); }
     ),
 
   delete: (id: number): Promise<void> =>
-    fetch(`${API_BASE}/users/${id}`, { method: "DELETE" }).then(
+    fetch(`${API_BASE}/users/${id}`, {
+      method: "DELETE",
+      headers: getHeaders(),
+    }).then(
       (res) => { if (!res.ok) throw new Error(`Erro HTTP ${res.status}`); }
     ),
 };

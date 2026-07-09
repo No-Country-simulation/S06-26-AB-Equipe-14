@@ -70,7 +70,14 @@ export default function DashboardContent() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [domain, setDomain] = useState<DomainCharts>(EMPTY_DOMAIN);
   const [loading, setLoading] = useState(true);
-  const [domainLoading, setDomainLoading] = useState(true);
+  // Loading por fonte de dados: cada gráfico revela-se assim que os seus dados
+  // chegam, sem esperar pelos payloads mais pesados (ex.: assinantes ~33 MB).
+  const [srcLoading, setSrcLoading] = useState({
+    antenas: true,
+    conc: true,
+    fluxos: true,
+    assinantes: true,
+  });
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -85,26 +92,52 @@ export default function DashboardContent() {
       .catch(() => alive && setError('Não foi possível carregar os dados de utilizadores.'))
       .finally(() => alive && setLoading(false));
 
-    // Dados de domínio (mobilidade/telecom + assinantes) — falham em silêncio.
-    Promise.all([
-      dadosApi.antenas(),
-      dadosApi.concentracao(),
-      dadosApi.fluxoVias(),
-      dadosApi.assinantes(),
-    ])
-      .then(([antenas, conc, fluxos, assinantes]) => {
+    // Dados de domínio — carregados de forma independente (progressiva) para
+    // que os gráficos rápidos apareçam já e os pesados não bloqueiem a página.
+    const pAntenas = dadosApi
+      .antenasStats()
+      .then((antenas) => {
         if (!alive) return;
-        setDomain({
-          antenasTecnologia: antenasPorTecnologia(antenas),
+        setDomain((d) => ({ ...d, antenasTecnologia: antenasPorTecnologia(antenas) }));
+      })
+      .finally(() => alive && setSrcLoading((s) => ({ ...s, antenas: false })));
+
+    const pConc = dadosApi
+      .concStats()
+      .then((conc) => {
+        if (!alive) return;
+        setDomain((d) => ({
+          ...d,
           concMunicipio: concentracaoPorMunicipio(conc),
           concPeriodo: concentracaoPorPeriodo(conc),
-          fluxos: topFluxos(fluxos),
-          ageGroup: assinantesPorAgeGroup(assinantes),
-          income: assinantesPorIncome(assinantes),
-          mobilidade: assinantesPorMobilidade(assinantes),
-        });
+        }));
       })
-      .finally(() => alive && setDomainLoading(false));
+      .finally(() => alive && setSrcLoading((s) => ({ ...s, conc: false })));
+
+    const pFluxos = dadosApi
+      .fluxoViasStats()
+      .then((fluxos) => {
+        if (!alive) return;
+        setDomain((d) => ({ ...d, fluxos: topFluxos(fluxos) }));
+      })
+      .finally(() => alive && setSrcLoading((s) => ({ ...s, fluxos: false })));
+
+    // Assinantes — só arranca depois dos leves, para não competir por largura de banda.
+    Promise.allSettled([pAntenas, pConc, pFluxos]).then(() => {
+      if (!alive) return;
+      dadosApi
+        .assinantesStats()
+        .then((assinantes) => {
+          if (!alive) return;
+          setDomain((d) => ({
+            ...d,
+            ageGroup: assinantesPorAgeGroup(assinantes),
+            income: assinantesPorIncome(assinantes),
+            mobilidade: assinantesPorMobilidade(assinantes),
+          }));
+        })
+        .finally(() => alive && setSrcLoading((s) => ({ ...s, assinantes: false })));
+    });
 
     return () => {
       alive = false;
@@ -257,7 +290,7 @@ export default function DashboardContent() {
             subtitle="Utilizadores únicos (top 8)"
             icon={<BsGraphUp />}
             className="lg:col-span-2"
-            loading={domainLoading}
+            loading={srcLoading.conc}
             empty={domain.concMunicipio.length === 0}
           >
             <CategoryBarChart data={domain.concMunicipio} horizontal />
@@ -267,7 +300,7 @@ export default function DashboardContent() {
             title="Antenas por Tecnologia"
             subtitle="Distribuição da rede"
             icon={<BsBroadcastPin />}
-            loading={domainLoading}
+            loading={srcLoading.antenas}
             empty={domain.antenasTecnologia.length === 0}
           >
             <CategoryPieChart data={domain.antenasTecnologia} />
@@ -277,7 +310,7 @@ export default function DashboardContent() {
             title="Atividade por Período"
             subtitle="Utilizadores ao longo do dia"
             icon={<BsClock />}
-            loading={domainLoading}
+            loading={srcLoading.conc}
             empty={domain.concPeriodo.length === 0}
           >
             <CategoryLineChart data={domain.concPeriodo} />
@@ -288,7 +321,7 @@ export default function DashboardContent() {
             subtitle="Origem → destino por transições"
             icon={<BsArrowLeftRight />}
             className="lg:col-span-2"
-            loading={domainLoading}
+            loading={srcLoading.fluxos}
             empty={domain.fluxos.length === 0}
           >
             <CategoryBarChart data={domain.fluxos} horizontal color="#a855f7" />
@@ -309,7 +342,7 @@ export default function DashboardContent() {
             title="Faixa Etária"
             subtitle="Assinantes por age group"
             icon={<BsPeople />}
-            loading={domainLoading}
+            loading={srcLoading.assinantes}
             empty={domain.ageGroup.length === 0}
           >
             <CategoryBarChart data={domain.ageGroup} />
@@ -319,7 +352,7 @@ export default function DashboardContent() {
             title="Cluster de Rendimento"
             subtitle="Assinantes por income cluster"
             icon={<BsCashStack />}
-            loading={domainLoading}
+            loading={srcLoading.assinantes}
             empty={domain.income.length === 0}
           >
             <CategoryPieChart data={domain.income} />
@@ -329,7 +362,7 @@ export default function DashboardContent() {
             title="Padrão de Mobilidade"
             subtitle="Assinantes por mobility pattern"
             icon={<BsSignpost />}
-            loading={domainLoading}
+            loading={srcLoading.assinantes}
             empty={domain.mobilidade.length === 0}
           >
             <CategoryBarChart data={domain.mobilidade} color="#10b981" />

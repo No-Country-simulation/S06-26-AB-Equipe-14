@@ -1,3 +1,4 @@
+import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.routers.auth import router as auth_router
@@ -30,9 +31,22 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="App BiT API", lifespan=lifespan)
 
+# Permitir origens locais para desenvolvimento e domínios de produção
+origins_env = os.environ.get("ALLOWED_ORIGINS", "")
+origins = [origin.strip() for origin in origins_env.split(",") if origin.strip()]
+
+# Garantir origens padrão se nenhuma for providenciada
+if not origins:
+    origins = [
+        "http://localhost:3000",
+        "http://localhost:3003",
+        "https://app-bit.surge.sh",
+    ]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=origins,
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )

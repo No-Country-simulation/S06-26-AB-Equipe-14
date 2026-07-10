@@ -79,9 +79,9 @@ export default function AIQueryContent() {
   }, [messages]);
 
   const suggestions = [
-    "Previsão de impacto para Luanda",
-    "Análise de churn por região",
-    "Resumo de KPIs do último mês"
+    "Qual cluster tem maior concentração de pessoas mas pior cobertura de rede?",
+    "Quais regiões têm maior fluxo de pessoas no horário de trabalho?",
+    "Qual o tempo médio de deslocamento entre os clusters?"
   ];
 
   return (

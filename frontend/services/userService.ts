@@ -1,13 +1,7 @@
 // src/services/userService.ts
 
-// Pega a URL da ENV (https://s06-26-ab-equipe-14.onrender.com/api)
-const RAW_API_URL = process.env.NEXT_PUBLIC_API_URL || "https://s06-26-ab-equipe-14.onrender.com/api";
-
-// Remove o '/api' do final caso ele exista, para obtermos a URL raiz do servidor
-const SERVER_ROOT = RAW_API_URL.replace(/\/api$/, "");
-
-// Mantém o padrão com '/api' para as rotas que usam (como /users)
-const API_BASE = SERVER_ROOT + "/api";
+// URL base vinda diretamente do .env (https://s06-26-ab-equipe-14.onrender.com/api)
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "https://s06-26-ab-equipe-14.onrender.com/api";
 
 export interface UserRequest {
   email: string;
@@ -65,7 +59,7 @@ function getHeaders(extra: Record<string, string> = {}): Record<string, string> 
 }
 
 export const userService = {
-  // POST /api/users/login
+  // POST /api/users/login (Mapeado no FastAPI como @router.post("/users/login"))
   login: (data: LoginRequest): Promise<LoginResponse> =>
     fetch(`${API_BASE}/users/login`, {
       method: "POST",
@@ -73,10 +67,9 @@ export const userService = {
       body: JSON.stringify(data),
     }).then(handleResponse<LoginResponse>),
 
-  // ✨ CORRIGIDO: Agora bate estritamente em https://s06-26-ab-equipe-14.onrender.com/auth/register
-  // exatamente como o log do seu servidor FastAPI exige!
+  // ✨ RETIFICADO: Mapeado no FastAPI como @router.post("/auth/register") com prefixo /api
   create: (data: UserRequest): Promise<UserResponse> =>
-    fetch(`${SERVER_ROOT}/auth/register`, {
+    fetch(`${API_BASE}/auth/register`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),

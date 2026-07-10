@@ -70,14 +70,30 @@ def seed_antenas(session, filepath):
     with open(filepath, mode="r", encoding="utf-8") as f:
         reader = csv.DictReader(f)
         for row in reader:
+            ecgi_str = to_str(row.get("ecgi"))
+            tecnologia = to_str(row.get("tecnologia"))
+            
+            if not tecnologia and ecgi_str:
+                try:
+                    ecgi_val = int(ecgi_str)
+                except ValueError:
+                    ecgi_val = 0
+                mod = ecgi_val % 10
+                if mod in (0, 1):
+                    tecnologia = "5G"
+                elif mod == 2:
+                    tecnologia = "3G"
+                else:
+                    tecnologia = "4G"
+
             antena = Antena(
-                ecgi=to_str(row.get("ecgi")),
+                ecgi=ecgi_str,
                 municipio=to_str(row.get("municipio")),
                 cluster=to_str(row.get("cluster")),
                 lat=to_float(row.get("lat")),
                 lon=to_float(row.get("lon")),
-                tecnologia=to_str(row.get("tecnologia")),
-                nome=to_str(row.get("nome"))
+                tecnologia=tecnologia,
+                nome=to_str(row.get("nome") or f"ERB_{ecgi_str[-4:] if ecgi_str else ''}")
             )
             batch.append(antena)
             count += 1

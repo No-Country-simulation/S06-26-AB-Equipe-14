@@ -1,6 +1,6 @@
 // src/services/userService.ts
 
-// Garante que se a env não existir, aponte explicitamente para a URL base correta do backend
+// Fallback configurado para a URL de produção da Equipa 14 se a ENV não estiver definida
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "https://s06-26-ab-equipe-14.onrender.com/api";
 
 export interface UserRequest {
@@ -67,7 +67,7 @@ export const userService = {
       body: JSON.stringify(data),
     }).then(handleResponse<LoginResponse>),
 
-  // RETIFICADO: Rota alterada de '/users' para '/auth/register' para alinhar com o Swagger exposto
+  // ✨ RETIFICADO: Alterado de ${API_BASE}/users para ${API_BASE}/auth/register
   create: (data: UserRequest): Promise<UserResponse> =>
     fetch(`${API_BASE}/auth/register`, {
       method: "POST",
@@ -91,8 +91,7 @@ export const userService = {
       body: JSON.stringify(data),
     }).then(handleResponse<UserResponse>),
 
-  // PATCH /api/users/{id}/deactivate 
-  // Nota: Verifique se no Swagger esta rota existe ou se é DELETE /api/users/{id} para apagar
+  // PATCH /api/users/{id}/deactivate
   deactivate: (id: number): Promise<void> =>
     fetch(`${API_BASE}/users/${id}/deactivate`, {
       method: "PATCH",
@@ -101,7 +100,7 @@ export const userService = {
       if (!res.ok) throw new Error(await res.text() || `Erro HTTP ${res.status}`); 
     }),
 
-  // DELETE /api/users/{id} (Corresponde ao 'Apagar Utilizador' do Swagger)
+  // DELETE /api/users/{id}
   delete: (id: number): Promise<void> =>
     fetch(`${API_BASE}/users/${id}`, {
       method: "DELETE",

@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "deploy": "next build && npx surge ./out"
+    "deploy": "EXPORT_BUILD=true next build && npx surge ./out"
   },
   "dependencies": {
     "jspdf": "^4.2.1",

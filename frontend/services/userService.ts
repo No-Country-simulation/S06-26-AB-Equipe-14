@@ -1,6 +1,7 @@
 // src/services/userService.ts
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "/api";
+// URL base vinda diretamente do .env (https://s06-26-ab-equipe-14.onrender.com/api)
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "https://s06-26-ab-equipe-14.onrender.com/api";
 
 export interface UserRequest {
   email: string;
@@ -58,7 +59,7 @@ function getHeaders(extra: Record<string, string> = {}): Record<string, string> 
 }
 
 export const userService = {
-  // POST /api/users/login
+  // POST /api/users/login (Mapeado no FastAPI como @router.post("/users/login"))
   login: (data: LoginRequest): Promise<LoginResponse> =>
     fetch(`${API_BASE}/users/login`, {
       method: "POST",
@@ -66,20 +67,23 @@ export const userService = {
       body: JSON.stringify(data),
     }).then(handleResponse<LoginResponse>),
 
-  // POST /api/users
+  // ✨ RETIFICADO: Mapeado no FastAPI como @router.post("/auth/register") com prefixo /api
   create: (data: UserRequest): Promise<UserResponse> =>
-    fetch(`${API_BASE}/users`, {
+    fetch(`${API_BASE}/auth/register`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     }).then(handleResponse<UserResponse>),
 
+  // GET /api/users
   findAll: (): Promise<UserResponse[]> =>
     fetch(`${API_BASE}/users`, { headers: getHeaders() }).then(handleResponse<UserResponse[]>),
 
+  // GET /api/users/{id}
   findById: (id: number): Promise<UserResponse> =>
     fetch(`${API_BASE}/users/${id}`, { headers: getHeaders() }).then(handleResponse<UserResponse>),
 
+  // PUT /api/users/{id}
   update: (id: number, data: Partial<UserRequest>): Promise<UserResponse> =>
     fetch(`${API_BASE}/users/${id}`, {
       method: "PUT",
@@ -87,21 +91,23 @@ export const userService = {
       body: JSON.stringify(data),
     }).then(handleResponse<UserResponse>),
 
+  // PATCH /api/users/{id}/deactivate
   deactivate: (id: number): Promise<void> =>
     fetch(`${API_BASE}/users/${id}/deactivate`, {
       method: "PATCH",
       headers: getHeaders(),
-    }).then(
-      (res) => { if (!res.ok) throw new Error(`Erro HTTP ${res.status}`); }
-    ),
+    }).then(async (res) => { 
+      if (!res.ok) throw new Error(await res.text() || `Erro HTTP ${res.status}`); 
+    }),
 
+  // DELETE /api/users/{id}
   delete: (id: number): Promise<void> =>
     fetch(`${API_BASE}/users/${id}`, {
       method: "DELETE",
       headers: getHeaders(),
-    }).then(
-      (res) => { if (!res.ok) throw new Error(`Erro HTTP ${res.status}`); }
-    ),
+    }).then(async (res) => { 
+      if (!res.ok) throw new Error(await res.text() || `Erro HTTP ${res.status}`); 
+    }),
 };
 
 export default userService;

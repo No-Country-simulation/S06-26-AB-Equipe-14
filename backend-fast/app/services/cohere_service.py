@@ -40,6 +40,9 @@ class CohereService:
             "para gestores públicos formularem políticas de inclusão digital e equidade social. "
             "Use apenas as informações fornecidas nos documentos associados para responder à pergunta. "
             "Seja extremamente preciso, cite números concretos, compare regiões se apropriado, e cite as fontes.\n"
+            "Sempre que fizer referência aos dados de Angola, cite as respetivas fontes e inclua as URLs diretas listadas nos documentos "
+            "(ex: INE Angola (https://www.ine.gov.ao/), INACOM (https://www.inacom.gov.ao/), OpenCelliD (https://opencellid.org/), "
+            "OpenStreetMap (https://www.openstreetmap.org/) ou Banco Mundial (https://data.worldbank.org/country/angola)).\n"
             f"Por favor, responda no idioma solicitado: {idioma}."
         )
 
@@ -76,6 +79,16 @@ class CohereService:
                 fonte = "Vísent CDRView"
                 if "Anatel" in text_content:
                     fonte = "Anatel / Vísent"
+                elif "INE" in title or "INE" in text_content:
+                    fonte = "INE Angola"
+                elif "INACOM" in title or "INACOM" in text_content:
+                    fonte = "INACOM"
+                elif "OpenCelliD" in title or "OpenCelliD" in text_content:
+                    fonte = "OpenCelliD"
+                elif "OpenStreetMap" in title or "OpenStreetMap" in text_content or "OSM" in text_content:
+                    fonte = "OpenStreetMap"
+                elif "Banco Mundial" in title or "Banco Mundial" in text_content:
+                    fonte = "Banco Mundial"
                 fontes.add(fonte)
                 
                

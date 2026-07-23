@@ -96,3 +96,15 @@ def stats_trajetos_comuns(
 ):
     service = VisentService(db)
     return service.get_stats_trajetos_comuns(regiao)
+
+
+@router.get("/cruzamento")
+def cruzar_fontes_endpoint(
+    fontes: str,
+    regiao: Optional[str] = None,
+    db: Session = Depends(get_db)
+):
+    service = VisentService(db)
+    lista_fontes = [f.strip() for f in fontes.split(",") if f.strip()]
+    return service.cruzar_dados(lista_fontes, regiao)
+

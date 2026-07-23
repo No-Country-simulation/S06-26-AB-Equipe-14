@@ -11,7 +11,8 @@ import {
   BsPerson, 
   BsCircleFill, 
   BsBoxArrowRight, 
-  BsThreeDotsVertical 
+  BsThreeDotsVertical,
+  BsShuffle
 } from 'react-icons/bs'
 
 export default function Sidebar() {
@@ -69,6 +70,11 @@ export default function Sidebar() {
       label: 'Busca IA',
       href: '/dashboard/aiquery',
       icon: <BsRobot size={20} />,
+    },
+    {
+      label: 'Fontes Angola',
+      href: '/dashboard/sources',
+      icon: <BsShuffle size={20} />,
     },
   ]
 

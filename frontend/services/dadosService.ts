@@ -94,6 +94,8 @@ export const dadosApi = {
   concStats: () => fetchStats<ConcentracaoStats>("tensor_concentracao"),
   fluxoViasStats: () => fetchStats<FluxoViasStats>("tensor_fluxovias"),
   odStats: () => fetchStats<ODStats>("tensorod"),
+  cruzamento: (fontes: string, regiao?: string) =>
+    fetchStats<any[]>(`cruzamento?fontes=${encodeURIComponent(fontes)}${regiao ? `&regiao=${encodeURIComponent(regiao)}` : ""}`),
 };
 
 

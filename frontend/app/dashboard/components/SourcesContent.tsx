@@ -107,14 +107,23 @@ export default function SourcesContent() {
 
   return (
     <div className="p-4 sm:p-8 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-      {/* Header */}
+      {/* Header com a Bandeira de Angola */}
       <div className="relative overflow-hidden bg-gradient-to-br from-slate-900/80 to-purple-900/20 border border-purple-500/20 rounded-3xl p-6 backdrop-blur-xl shadow-2xl">
         <div className="absolute top-0 right-0 p-8 opacity-10">
           <BsShuffle size={120} className="text-purple-400 animate-pulse" />
         </div>
         <div className="relative z-10 space-y-3">
           <div className="flex items-center gap-3">
-            <span className="flex h-3 w-3 rounded-full bg-purple-500 animate-ping" />
+            {/* Ícone da Bandeira de Angola */}
+            <div className="w-8 h-6 rounded overflow-hidden shadow-md flex flex-col border border-white/20 shrink-0">
+              <div className="h-1/2 bg-red-600 w-full" />
+              <div className="h-1/2 bg-black w-full relative flex items-center justify-center">
+                {/* Emblema centralizado simplificado (Estrela/Roda amarela) */}
+                <div className="w-2 h-2 rounded-full bg-amber-400 flex items-center justify-center text-[6px]">
+                  ★
+                </div>
+              </div>
+            </div>
             <h2 className="text-sm font-bold uppercase tracking-[0.2em] text-purple-400">Cruzamento de Fontes</h2>
           </div>
           <h3 className="text-3xl font-extrabold text-white leading-tight">

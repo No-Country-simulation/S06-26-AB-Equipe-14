@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   BsShuffle,
   BsGlobe2,
@@ -15,6 +15,7 @@ import {
   BsFileBarGraph,
   BsCheckCircleFill,
   BsCashCoin,
+  BsExclamationTriangle,
 } from 'react-icons/bs';
 import { dadosApi } from '@/services/dadosService';
 
@@ -29,6 +30,14 @@ interface Source {
   bgColor: string;
   glow: string;
   description: string;
+}
+
+type Indicadores = Record<string, string | number>;
+
+interface CrossedSourceData {
+  fonte: string;
+  url: string;
+  indicadores: Indicadores;
 }
 
 const SOURCES: Source[] = [
@@ -94,75 +103,155 @@ const SOURCES: Source[] = [
   },
 ];
 
+// Lookup by normalized name so we can match a source's metadata (icon/color)
+// to whatever the API returns in `fonte`, without re-scanning the array on every render.
+const SOURCE_BY_NAME = new Map(SOURCES.map((s) => [s.name.toLowerCase(), s]));
+
+const SUMMARY_STATS = [
+  {
+    id: 'inclusao-digital',
+    title: 'Inclusão Digital',
+    subtitle: 'Acesso à internet da população',
+    value: '64.5%',
+    percent: 64.5,
+    color: 'cyan',
+    target: 'Meta: 75% até 2026',
+    delta: '↑ 8.2%',
+    deltaPositive: true,
+  },
+  {
+    id: 'torres-de-sinal',
+    title: 'Torres de Sinal',
+    subtitle: 'Cobertura 4G/5G nacional',
+    value: '78.2%',
+    percent: 78.2,
+    color: 'purple',
+    target: 'Meta: 85% até 2026',
+    delta: '↑ 5.6%',
+    deltaPositive: true,
+  },
+  {
+    id: 'alfabetizacao',
+    title: 'Alfabetização',
+    subtitle: 'População alfabetizada (15+)',
+    value: '71.3%',
+    percent: 71.3,
+    color: 'emerald',
+    target: 'Meta: 80% até 2030',
+    delta: '↑ 3.4%',
+    deltaPositive: true,
+  },
+  {
+    id: 'pib-per-capita',
+    title: 'PIB per Capita',
+    subtitle: 'Crescimento anual',
+    value: '2.8%',
+    percent: 45,
+    color: 'amber',
+    target: 'Meta: 4.0% até 2026',
+    delta: '↓ -1.2%',
+    deltaPositive: false,
+  },
+] as const;
+
+const STAT_COLOR_CLASSES: Record<string, { text: string; bar: string }> = {
+  cyan: { text: 'text-cyan-400', bar: 'bg-cyan-500' },
+  purple: { text: 'text-purple-400', bar: 'bg-purple-500' },
+  emerald: { text: 'text-emerald-400', bar: 'bg-emerald-500' },
+  amber: { text: 'text-amber-400', bar: 'bg-amber-500' },
+};
+
+const INITIAL_CROSSED_DATA: CrossedSourceData[] = [
+  {
+    fonte: 'INE Angola',
+    url: 'https://www.ine.gov.ao/',
+    indicadores: {
+      Populacao: '37.2M',
+      Taxa_de_alfabetizacao: '71.3%',
+      Taxa_de_emprego: '61.2%',
+    },
+  },
+  {
+    fonte: 'INACOM',
+    url: 'https://www.inacom.gov.ao/',
+    indicadores: {
+      Cobertura_4G: '78.2%',
+      Assinantes_moveis: '26.4M',
+      Penetracao_movel: '92.1%',
+    },
+  },
+  {
+    fonte: 'OpenCelliD',
+    url: 'https://opencellid.org/',
+    indicadores: {
+      Torres_registadas: '4,856',
+      Torres_ativas: '4,102',
+      Tecnologias: '2G, 3G, 4G, 5G',
+    },
+  },
+  {
+    fonte: 'OpenStreetMap',
+    url: 'https://www.openstreetmap.org/',
+    indicadores: {
+      Vias_mapeadas: '287K km',
+      Edificios: '1.2M',
+      Atualizacao: 'Diária',
+    },
+  },
+  {
+    fonte: 'Banco Mundial',
+    url: 'https://data.worldbank.org/country/angola',
+    indicadores: {
+      PIB_per_capita: '$2,512',
+      Acesso_a_eletricidade: '57%',
+      Indice_de_capital_humano: '0.46',
+    },
+  },
+];
+
 export default function SourcesContent() {
   const [selected, setSelected] = useState<string[]>(['ine', 'inacom']);
   const [crossing, setCrossing] = useState(false);
-  const [crossedData, setCrossedData] = useState<any[] | null>([
-    {
-      fonte: 'INE Angola',
-      url: 'https://www.ine.gov.ao/',
-      indicadores: {
-        Populacao: '37.2M',
-        Taxa_de_alfabetizacao: '71.3%',
-        Taxa_de_emprego: '61.2%',
-      },
-    },
-    {
-      fonte: 'INACOM',
-      url: 'https://www.inacom.gov.ao/',
-      indicadores: {
-        Cobertura_4G: '78.2%',
-        Assinantes_moveis: '26.4M',
-        Penetracao_movel: '92.1%',
-      },
-    },
-    {
-      fonte: 'OpenCelliD',
-      url: 'https://opencellid.org/',
-      indicadores: {
-        Torres_registadas: '4,856',
-        Torres_ativas: '4,102',
-        Tecnologias: '2G, 3G, 4G, 5G',
-      },
-    },
-    {
-      fonte: 'OpenStreetMap',
-      url: 'https://www.openstreetmap.org/',
-      indicadores: {
-        Vias_mapeadas: '287K km',
-        Edificios: '1.2M',
-        Atualizacao: 'Diária',
-      },
-    },
-    {
-      fonte: 'Banco Mundial',
-      url: 'https://data.worldbank.org/country/angola',
-      indicadores: {
-        PIB_per_capita: '$2,512',
-        Acesso_a_eletricidade: '57%',
-        Indice_de_capital_humano: '0.46',
-      },
-    },
-  ]);
+  const [error, setError] = useState<string | null>(null);
+  const [crossedData, setCrossedData] = useState<CrossedSourceData[] | null>(INITIAL_CROSSED_DATA);
 
   const toggleSelect = (id: string) => {
-    setSelected(prev =>
-      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+    setSelected((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
     );
+  };
+
+  const handleCardKeyDown = (e: React.KeyboardEvent<HTMLDivElement>, id: string) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      toggleSelect(id);
+    }
   };
 
   const handleCrossData = async () => {
     setCrossing(true);
+    setError(null);
     try {
       const queryStr = selected.join(',');
       const res = await dadosApi.cruzamento(queryStr);
       if (res) setCrossedData(res);
     } catch (err) {
       console.error('Erro ao cruzar fontes:', err);
+      setError('Não foi possível cruzar as fontes selecionadas. Tenta novamente.');
     } finally {
       setCrossing(false);
     }
   };
+
+  // Only show rows for sources the user currently has selected, so the table
+  // stays in sync with the checkboxes above instead of always listing all 5 fontes.
+  const displayedData = useMemo(() => {
+    if (!crossedData) return [];
+    return crossedData.filter((item) => {
+      const meta = SOURCE_BY_NAME.get(item.fonte.toLowerCase());
+      return meta ? selected.includes(meta.id) : true;
+    });
+  }, [crossedData, selected]);
 
   return (
     <div className="p-4 sm:p-8 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -192,8 +281,13 @@ export default function SourcesContent() {
           return (
             <div
               key={source.id}
+              role="checkbox"
+              aria-checked={isSelected}
+              aria-label={`${source.name} — ${isSelected ? 'selecionado' : 'disponível'}`}
+              tabIndex={0}
               onClick={() => toggleSelect(source.id)}
-              className={`relative overflow-hidden cursor-pointer border rounded-2xl p-5 backdrop-blur-md transition-all duration-300 flex flex-col justify-between ${
+              onKeyDown={(e) => handleCardKeyDown(e, source.id)}
+              className={`relative overflow-hidden cursor-pointer border rounded-2xl p-5 backdrop-blur-md transition-all duration-300 flex flex-col justify-between focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-400/60 ${
                 isSelected
                   ? 'bg-slate-900/90 border-purple-500/50 shadow-lg shadow-purple-500/5'
                   : 'bg-slate-900/30 border-white/5 hover:border-white/10 hover:bg-slate-900/50'
@@ -205,8 +299,8 @@ export default function SourcesContent() {
                     {source.icon}
                   </div>
                   <span className={`text-[10px] font-mono uppercase px-2.5 py-1 rounded-full border flex items-center gap-1 ${
-                    isSelected 
-                      ? 'bg-purple-500/20 text-purple-300 border-purple-500/30' 
+                    isSelected
+                      ? 'bg-purple-500/20 text-purple-300 border-purple-500/30'
                       : 'bg-white/5 text-slate-400 border-white/5'
                   }`}>
                     {isSelected && <BsCheckCircleFill size={10} />}
@@ -231,11 +325,7 @@ export default function SourcesContent() {
                   <BsLink45Deg size={14} /> Aceder a URL
                 </a>
                 <span className="text-[10px] font-mono text-slate-400 flex items-center gap-1">
-                  {source.scope === 'Angola' ? (
-                    <span>🇦🇴</span>
-                  ) : (
-                    <BsGlobe2 size={10} />
-                  )}
+                  {source.scope === 'Angola' ? <span>🇦🇴</span> : <BsGlobe2 size={10} />}
                   {source.scope}
                 </span>
               </div>
@@ -266,13 +356,18 @@ export default function SourcesContent() {
         {selected.length === 0 && (
           <span className="text-xs text-slate-500">Selecione pelo menos uma fonte para iniciar o cruzamento</span>
         )}
+        {error && (
+          <span className="text-xs text-rose-400 flex items-center gap-1.5">
+            <BsExclamationTriangle size={12} /> {error}
+          </span>
+        )}
       </div>
 
       {/* Resultados do Cruzamento com Gráficos */}
-      {crossedData && crossedData.length > 0 && (
+      {displayedData.length > 0 && (
         <div className="space-y-6 pt-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-            
+
             {/* Resultados do Cruzamento (Esquerda) */}
             <div className="bg-slate-900/40 border border-white/10 rounded-3xl p-6 backdrop-blur-xl shadow-2xl space-y-6">
               <div className="flex items-center gap-3">
@@ -281,61 +376,23 @@ export default function SourcesContent() {
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* Card 1: Inclusão Digital */}
-                <div className="bg-white/5 border border-white/5 rounded-2xl p-4 space-y-3">
-                  <div className="text-xs font-medium text-slate-300">Inclusão Digital</div>
-                  <div className="text-[11px] text-slate-400">Acesso à internet da população</div>
-                  <div className="text-3xl font-extrabold text-cyan-400 font-mono">64.5%</div>
-                  <div className="relative w-full bg-slate-950 h-2 rounded-full overflow-hidden border border-white/10">
-                    <div className="bg-cyan-500 h-full rounded-full" style={{ width: '64.5%' }} />
-                  </div>
-                  <div className="flex justify-between text-[10px] text-slate-400 font-mono">
-                    <span>Meta: 75% até 2026</span>
-                    <span className="text-emerald-400">↑ 8.2%</span>
-                  </div>
-                </div>
-
-                {/* Card 2: Torres de Sinal */}
-                <div className="bg-white/5 border border-white/5 rounded-2xl p-4 space-y-3">
-                  <div className="text-xs font-medium text-slate-300">Torres de Sinal</div>
-                  <div className="text-[11px] text-slate-400">Cobertura 4G/5G nacional</div>
-                  <div className="text-3xl font-extrabold text-purple-400 font-mono">78.2%</div>
-                  <div className="relative w-full bg-slate-950 h-2 rounded-full overflow-hidden border border-white/10">
-                    <div className="bg-purple-500 h-full rounded-full" style={{ width: '78.2%' }} />
-                  </div>
-                  <div className="flex justify-between text-[10px] text-slate-400 font-mono">
-                    <span>Meta: 85% até 2026</span>
-                    <span className="text-emerald-400">↑ 5.6%</span>
-                  </div>
-                </div>
-
-                {/* Card 3: Alfabetização */}
-                <div className="bg-white/5 border border-white/5 rounded-2xl p-4 space-y-3">
-                  <div className="text-xs font-medium text-slate-300">Alfabetização</div>
-                  <div className="text-[11px] text-slate-400">População alfabetizada (15+)</div>
-                  <div className="text-3xl font-extrabold text-emerald-400 font-mono">71.3%</div>
-                  <div className="relative w-full bg-slate-950 h-2 rounded-full overflow-hidden border border-white/10">
-                    <div className="bg-emerald-500 h-full rounded-full" style={{ width: '71.3%' }} />
-                  </div>
-                  <div className="flex justify-between text-[10px] text-slate-400 font-mono">
-                    <span>Meta: 80% até 2030</span>
-                    <span className="text-emerald-400">↑ 3.4%</span>
-                  </div>
-                </div>
-
-                {/* Card 4: PIB per Capita */}
-                <div className="bg-white/5 border border-white/5 rounded-2xl p-4 space-y-3">
-                  <div className="text-xs font-medium text-slate-300">PIB per Capita</div>
-                  <div className="text-[11px] text-slate-400">Crescimento anual</div>
-                  <div className="text-3xl font-extrabold text-amber-400 font-mono">2.8%</div>
-                  <div className="relative w-full bg-slate-950 h-2 rounded-full overflow-hidden border border-white/10">
-                    <div className="bg-amber-500 h-full rounded-full" style={{ width: '45%' }} />
-                  </div>
-                  <div className="flex justify-between text-[10px] text-slate-400 font-mono">
-                    <span>Meta: 4.0% até 2026</span>
-                    <span className="text-rose-400">↓ -1.2%</span>
-                  </div>
-                </div>
+                {SUMMARY_STATS.map((stat) => {
+                  const classes = STAT_COLOR_CLASSES[stat.color];
+                  return (
+                    <div key={stat.id} className="bg-white/5 border border-white/5 rounded-2xl p-4 space-y-3">
+                      <div className="text-xs font-medium text-slate-300">{stat.title}</div>
+                      <div className="text-[11px] text-slate-400">{stat.subtitle}</div>
+                      <div className={`text-3xl font-extrabold font-mono ${classes.text}`}>{stat.value}</div>
+                      <div className="relative w-full bg-slate-950 h-2 rounded-full overflow-hidden border border-white/10">
+                        <div className={`${classes.bar} h-full rounded-full`} style={{ width: `${stat.percent}%` }} />
+                      </div>
+                      <div className="flex justify-between text-[10px] text-slate-400 font-mono">
+                        <span>{stat.target}</span>
+                        <span className={stat.deltaPositive ? 'text-emerald-400' : 'text-rose-400'}>{stat.delta}</span>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
 
               {/* Distribuição Populacional Donut */}
@@ -352,7 +409,7 @@ export default function SourcesContent() {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="relative flex items-center justify-center shrink-0">
                   <svg className="w-24 h-24 transform -rotate-90">
                     <circle cx="48" cy="48" r="38" stroke="currentColor" strokeWidth="8" className="text-slate-950" fill="transparent" />
@@ -388,15 +445,17 @@ export default function SourcesContent() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-white/5">
-                    {crossedData.map((item, idx) => {
-                      const sourceMeta = SOURCES.find(s => s.name.toLowerCase() === item.fonte.toLowerCase());
+                    {displayedData.map((item) => {
+                      const sourceMeta = SOURCE_BY_NAME.get(item.fonte.toLowerCase());
                       return (
-                        <tr key={idx} className="hover:bg-white/5 transition-colors">
-                          <td className="py-3.5 font-semibold text-white flex items-center gap-2">
-                            <div className={`p-1.5 rounded-full ${sourceMeta?.bgColor || 'bg-purple-500/15'} ${sourceMeta?.color || 'text-purple-400'}`}>
-                              {sourceMeta?.icon || <BsBuildingCheck size={14} />}
+                        <tr key={item.fonte} className="hover:bg-white/5 transition-colors">
+                          <td className="py-3.5 font-semibold text-white">
+                            <div className="flex items-center gap-2">
+                              <div className={`p-1.5 rounded-full ${sourceMeta?.bgColor || 'bg-purple-500/15'} ${sourceMeta?.color || 'text-purple-400'}`}>
+                                {sourceMeta?.icon || <BsGraphUpArrow size={14} />}
+                              </div>
+                              {item.fonte}
                             </div>
-                            {item.fonte}
                           </td>
                           <td className="py-3.5">
                             <a
@@ -413,7 +472,7 @@ export default function SourcesContent() {
                               {Object.entries(item.indicadores || {}).map(([key, val]) => (
                                 <div key={key} className="flex items-center gap-1.5">
                                   <BsCheckCircleFill size={10} className="text-emerald-400 shrink-0" />
-                                  <span className="text-slate-400">{key.replace(/_/g, ' ')}:</span> 
+                                  <span className="text-slate-400">{key.replace(/_/g, ' ')}:</span>
                                   <span className="text-white font-bold">{String(val)}</span>
                                 </div>
                               ))}
@@ -428,6 +487,12 @@ export default function SourcesContent() {
             </div>
 
           </div>
+        </div>
+      )}
+
+      {crossedData && displayedData.length === 0 && (
+        <div className="text-center text-xs text-slate-500 py-6 border border-dashed border-white/10 rounded-2xl">
+          Nenhuma fonte selecionada corresponde aos dados já cruzados. Seleciona uma fonte acima ou clica em "Cruzar Fontes Mapeadas".
         </div>
       )}
     </div>

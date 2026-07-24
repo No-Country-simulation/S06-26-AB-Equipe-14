@@ -196,7 +196,7 @@ export default function SourcesContent() {
         </button>
       </div>
 
-      {/* Resultados do Cruzamento */}
+      {/* Resultados do Cruzamento com Gráficos */}
       {crossedData && crossedData.length > 0 && (
         <div className="bg-slate-900/40 border border-white/10 rounded-3xl p-6 backdrop-blur-xl shadow-2xl animate-in fade-in slide-in-from-bottom-2 duration-500 space-y-6">
           <div className="flex items-center gap-3">
@@ -205,50 +205,88 @@ export default function SourcesContent() {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Visualização de Métricas Cruzadas */}
+            {/* Visualização em Gráficos (Barras e Circular) */}
             <div className="space-y-4">
               <h5 className="text-sm font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
-                <BsFileBarGraph /> Indicadores de Desenvolvimento & Telecomunicações
+                <BsFileBarGraph /> Gráficos de Indicadores & Telecomunicações
               </h5>
-              <div className="space-y-3">
-                {/* Métricas estimadas baseadas no cruzamento de fontes */}
+              
+              <div className="space-y-4">
+                {/* Gráfico de Barras: Inclusão Digital */}
                 <div className="bg-white/5 border border-white/5 rounded-xl p-4 space-y-3">
                   <div className="flex justify-between items-center text-xs">
-                    <span className="text-slate-400">Inclusão Digital vs. População Ativa (INE + INACOM)</span>
-                    <span className="text-cyan-400 font-mono font-bold">~64.5% Penetração</span>
+                    <span className="text-slate-300 font-medium">Inclusão Digital vs. População Ativa (INE + INACOM)</span>
+                    <span className="text-cyan-400 font-mono font-bold">64.5%</span>
                   </div>
-                  <div className="w-full bg-slate-950 h-2 rounded-full overflow-hidden">
-                    <div className="bg-cyan-400 h-full rounded-full" style={{ width: '64.5%' }} />
+                  <div className="relative w-full bg-slate-950 h-3 rounded-full overflow-hidden p-0.5 border border-white/10">
+                    <div className="bg-gradient-to-r from-cyan-500 to-blue-500 h-full rounded-full transition-all duration-1000" style={{ width: '64.5%' }} />
+                  </div>
+                  <div className="flex justify-between text-[10px] text-slate-500 font-mono">
+                    <span>0%</span>
+                    <span>Meta Nacional: 75%</span>
+                    <span>100%</span>
                   </div>
                   <p className="text-[11px] text-slate-400 leading-relaxed">
                     Correlaciona a estimativa populacional de 37 milhões (INE) com os 16.5 milhões de assinantes móveis ativos (INACOM).
                   </p>
                 </div>
 
+                {/* Gráfico de Barras: Torres de Sinal */}
                 <div className="bg-white/5 border border-white/5 rounded-xl p-4 space-y-3">
                   <div className="flex justify-between items-center text-xs">
-                    <span className="text-slate-400">Torres de Sinal por Cobertura Populacional (OpenCelliD + OSM)</span>
-                    <span className="text-purple-400 font-mono font-bold">12.450 ERBs / 18 Províncias</span>
+                    <span className="text-slate-300 font-medium">Torres de Sinal por Cobertura (OpenCelliD + OSM)</span>
+                    <span className="text-purple-400 font-mono font-bold">78.2%</span>
                   </div>
-                  <div className="w-full bg-slate-950 h-2 rounded-full overflow-hidden">
-                    <div className="bg-purple-400 h-full rounded-full" style={{ width: '78.2%' }} />
+                  <div className="relative w-full bg-slate-950 h-3 rounded-full overflow-hidden p-0.5 border border-white/10">
+                    <div className="bg-gradient-to-r from-purple-500 to-indigo-500 h-full rounded-full transition-all duration-1000" style={{ width: '78.2%' }} />
+                  </div>
+                  <div className="flex justify-between text-[10px] text-slate-500 font-mono">
+                    <span>0%</span>
+                    <span>12.450 ERBs / 18 Províncias</span>
+                    <span>100%</span>
                   </div>
                   <p className="text-[11px] text-slate-400 leading-relaxed">
                     Mapeia a densidade de ERBs ativas nas principais províncias e eixos rodoviários federais integrados no OpenStreetMap.
                   </p>
                 </div>
 
-                <div className="bg-white/5 border border-white/5 rounded-xl p-4 space-y-3">
-                  <div className="flex justify-between items-center text-xs">
-                    <span className="text-slate-400">Acesso a Infraestruturas Básicas (Banco Mundial)</span>
-                    <span className="text-amber-400 font-mono font-bold">46.8% Eletricidade</span>
+                {/* Gráfico Circular / Donut Customizado: Acesso a Infraestruturas */}
+                <div className="bg-white/5 border border-white/5 rounded-xl p-4 flex items-center justify-between gap-4">
+                  <div className="space-y-2 flex-1">
+                    <div className="text-xs font-medium text-slate-300">Acesso a Infraestruturas Básicas</div>
+                    <div className="text-[11px] text-slate-400 leading-relaxed">
+                      O acesso a energia constitui um fator crítico para a expansão de cobertura e inclusão digital nas regiões semi-urbanas e rurais (Banco Mundial).
+                    </div>
                   </div>
-                  <div className="w-full bg-slate-950 h-2 rounded-full overflow-hidden">
-                    <div className="bg-amber-400 h-full rounded-full" style={{ width: '46.8%' }} />
+                  {/* Gráfico Donut em SVG */}
+                  <div className="relative flex items-center justify-center shrink-0">
+                    <svg className="w-20 h-20 transform -rotate-90">
+                      <circle
+                        cx="40"
+                        cy="40"
+                        r="32"
+                        stroke="currentColor"
+                        strokeWidth="6"
+                        className="text-slate-950"
+                        fill="transparent"
+                      />
+                      <circle
+                        cx="40"
+                        cy="40"
+                        r="32"
+                        stroke="currentColor"
+                        strokeWidth="6"
+                        className="text-amber-400 transition-all duration-1000"
+                        fill="transparent"
+                        strokeDasharray={201}
+                        strokeDashoffset={201 - (201 * 46.8) / 100}
+                        strokeLinecap="round"
+                      />
+                    </svg>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+                      <span className="text-xs font-bold font-mono text-amber-400">46.8%</span>
+                    </div>
                   </div>
-                  <p className="text-[11px] text-slate-400 leading-relaxed">
-                    O acesso a energia constitui um fator crítico para a expansão de cobertura e inclusão digital nas regiões semi-urbanas e rurais.
-                  </p>
                 </div>
               </div>
             </div>

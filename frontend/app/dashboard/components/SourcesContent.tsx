@@ -5,15 +5,16 @@ import {
   BsShuffle,
   BsGlobe2,
   BsLink45Deg,
-  BsCpu,
-  BsBarChartSteps,
+  BsServer,
+  BsGraphUpArrow,
   BsDatabaseCheck,
-  BsTelephone,
-  BsPeople,
-  BsGeoAlt,
+  BsBroadcast,
+  BsBuildingCheck,
+  BsMap,
   BsArrowRight,
   BsFileBarGraph,
   BsCheckCircleFill,
+  BsCashCoin,
 } from 'react-icons/bs';
 import { dadosApi } from '@/services/dadosService';
 
@@ -37,7 +38,7 @@ const SOURCES: Source[] = [
     category: 'Demografia, Emprego & Censo',
     url: 'https://www.ine.gov.ao/',
     scope: 'Angola',
-    icon: <BsPeople size={22} />,
+    icon: <BsBuildingCheck size={22} />,
     color: 'text-cyan-400',
     bgColor: 'bg-cyan-500/15',
     glow: 'shadow-cyan-500/10',
@@ -49,7 +50,7 @@ const SOURCES: Source[] = [
     category: 'Telecomunicações & Cobertura Móvel',
     url: 'https://www.inacom.gov.ao/',
     scope: 'Angola',
-    icon: <BsTelephone size={22} />,
+    icon: <BsBroadcast size={22} />,
     color: 'text-blue-400',
     bgColor: 'bg-blue-500/15',
     glow: 'shadow-blue-500/10',
@@ -61,7 +62,7 @@ const SOURCES: Source[] = [
     category: 'Bancos de Dados de Torres',
     url: 'https://opencellid.org/',
     scope: 'Global',
-    icon: <BsCpu size={22} />,
+    icon: <BsServer size={22} />,
     color: 'text-purple-400',
     bgColor: 'bg-purple-500/15',
     glow: 'shadow-purple-500/10',
@@ -73,7 +74,7 @@ const SOURCES: Source[] = [
     category: 'Dados Geoespaciais & Mapas',
     url: 'https://www.openstreetmap.org/',
     scope: 'Global',
-    icon: <BsGeoAlt size={22} />,
+    icon: <BsMap size={22} />,
     color: 'text-emerald-400',
     bgColor: 'bg-emerald-500/15',
     glow: 'shadow-emerald-500/10',
@@ -85,7 +86,7 @@ const SOURCES: Source[] = [
     category: 'Indicadores Socioeconómicos',
     url: 'https://data.worldbank.org/country/angola',
     scope: 'Internacional',
-    icon: <BsGlobe2 size={22} />,
+    icon: <BsCashCoin size={22} />,
     color: 'text-amber-400',
     bgColor: 'bg-amber-500/15',
     glow: 'shadow-amber-500/10',
@@ -393,7 +394,7 @@ export default function SourcesContent() {
                         <tr key={idx} className="hover:bg-white/5 transition-colors">
                           <td className="py-3.5 font-semibold text-white flex items-center gap-2">
                             <div className={`p-1.5 rounded-full ${sourceMeta?.bgColor || 'bg-purple-500/15'} ${sourceMeta?.color || 'text-purple-400'}`}>
-                              {sourceMeta?.icon || <BsPeople size={14} />}
+                              {sourceMeta?.icon || <BsBuildingCheck size={14} />}
                             </div>
                             {item.fonte}
                           </td>

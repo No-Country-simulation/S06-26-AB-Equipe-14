@@ -41,6 +41,7 @@ if not origins:
         "http://localhost:3000",
         "http://localhost:3003",
         "https://app-bit.surge.sh",
+        "https://Plataforma-Inteligencia.surge.sh",
     ]
 
 app.add_middleware(
